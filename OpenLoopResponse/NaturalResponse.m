@@ -22,9 +22,9 @@ I = 0.5*m*(w/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 %% Natural Response - Case 1
 % Expected Result - Flies straight up
 u = [0 0 2*m*g 0]; % [F1, F2, Ft, psi]
-x0 = [0, 0, 0, 0, 0, 0];
+y0 = [0, 0, 0, 0, 0, 0];
 tspan = 0:0.2:100;
-[t, y] = ode45(@(t,y)odeFunction(y, w, L, bL, m, Fw, I, u), tspan, x0);
+[t, y] = ode45(@(t,y)odeFunction(y, w, L, bL, m, Fw, I, u), tspan, y0);
 
 % Plot position
 figure(1);
@@ -37,9 +37,9 @@ grid on;
 %% Natural Response - Case 2
 % Expected Result - Hovers completely still
 u = [0 0 m*g 0]; % [F1, F2, Ft, psi]
-x0 = [0, 0, 0, 0, 0, 0];
+y0 = [0, 0, 0, 0, 0, 0];
 tspan = 0:0.2:100;
-[t, y] = ode45(@(t,y)odeFunction(y, w, L, bL, m, Fw, I, u), tspan, x0);
+[t, y] = ode45(@(t,y)odeFunction(y, w, L, bL, m, Fw, I, u), tspan, y0);
 
 % Plot position
 figure(2);
@@ -52,9 +52,9 @@ grid on;
 %% Natural Response - Case 3
 % Expected Result - Flies up and to the right
 u = [95 100 2*m*g 0]; % [F1, F2, Ft, psi]
-x0 = [0, 0, 0, 0, 0, 0];
+y0 = [0, 0, 0, 0, 0, 0];
 tspan = 0:0.2:100;
-[t, y] = ode45(@(t,y)odeFunction(y, w, L, bL, m, Fw, I, u), tspan, x0);
+[t, y] = ode45(@(t,y)odeFunction(y, w, L, bL, m, Fw, I, u), tspan, y0);
 
 % Plot position
 figure(3);
@@ -67,9 +67,9 @@ grid on;
 %% Natural Response - Case 4
 % Expected Result - Flies up and to the left
 u = [100 95 2*m*g 0]; % [F1, F2, Ft, psi]
-x0 = [0, 0, 0, 0, 0, 0];
+y0 = [0, 0, 0, 0, 0, 0];
 tspan = 0:0.2:100;
-[t, y] = ode45(@(t,y)odeFunction(y, w, L, bL, m, Fw, I, u), tspan, x0);
+[t, y] = ode45(@(t,y)odeFunction(y, w, L, bL, m, Fw, I, u), tspan, y0);
 
 % Plot position
 figure(4);
