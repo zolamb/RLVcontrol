@@ -10,22 +10,22 @@ close all;
 
 %% Initialize Vehicle Constants
 % Original Constants
-w = 10;             % width of rocket
-L = 40;             % length of rocket
-bL = 10;            % distance from center of rocket to center of mass
-m = 100;            % mass of rocket
-g = 9.81;           % acceleration due to gravity
-Fw = m*g;        % weight of rocket
-I = 0.5*m*(w/2)^2;  % inertia for a cylinder (1/2*m*r^2)
+% w = 10;             % width of rocket
+% L = 40;             % length of rocket
+% bL = 10;            % distance from center of rocket to center of mass
+% m = 100;            % mass of rocket
+% g = 9.81;           % acceleration due to gravity
+% Fw = m*g;        % weight of rocket
+% I = 0.5*m*(w/2)^2;  % inertia for a cylinder (1/2*m*r^2)
 
 % RLV Physical Constants
-% w = 3.7;             % width of rocket (m)
-% L = 47.7;             % length of rocket (m)
-% bL = 15.0;            % distance from center of rocket to center of mass (m)
-% m = 250000.0;            % mass of rocket (kg)
-% g = 9.81;           % acceleration due to gravity (m/s^2)
-% Fw = m*g;           % weight of rocket (N)
-% I = 0.5*m*(w/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
+w = 3.7;             % width of rocket (m)
+L = 47.7;             % length of rocket (m)
+bL = 15.0;            % distance from center of rocket to center of mass (m)
+m = 250000.0;            % mass of rocket (kg)
+g = 9.81;           % acceleration due to gravity (m/s^2)
+Fw = m*g;           % weight of rocket (N)
+I = 0.5*m*(w/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 
 %% Create System of ODE's
 % State variables: x1 x2 x3 x4 x5 x6
@@ -83,25 +83,26 @@ D = [0 0 0 0;
      0 0 0 0];
 
 %% LQR Controller Design
+% Determine controllability
+rank(ctrb(A,B)) % This should equal the number of states - 6
+
 % LQR Control
-Q = [50 0 0 0 0 0;          % X pos
-     0 100 0 0 0 0;         % Y pos
-     0 0 10000 0  0 0;      % Omega
-     0 0 0 1 0  0;          % Vx
-     0 0 0 0 1 0;           % Vy
-     0 0 0 0 0 1];          % d(Omega)/dt
-R = [10 0 0 0;              % u1 = f1+f2
+Q = [100 0 0 0 0 0;          % X pos
+     0 100 0 0 0 0;          % Y pos
+     0 0 1e7 0  0 0;         % Theta
+     0 0 0 100 0  0;          % Vx
+     0 0 0 0 100 0;           % Vy
+     0 0 0 0 0 1e7];          % d(Theta)/dt
+R = [100 0 0 0;              % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
-     0 0 0 1e9];            % Psi - penalize this for less sharp angles
+     0 0 0 1000000];            % Psi 
 K = lqr(A, B, Q, R);
-
-% DO SOME CONTROLLABILITY TEST HERE ...
 
 %% Continuous Time Control
 sys = ss((A-B*K), B, C, D);
 y0 = [100 100 0 0 0 0];
-figure(7)
+figure(99)
 initial(sys, y0)
 
 %% Discrete Time Control
@@ -112,7 +113,7 @@ dt=0.01;
 xRec=[];
 tRec=[];
 urec=[];
-for i=1:3500
+for i=1:5000
      u = -K*(y0-ystar);% feedback control (small signals) 
      % defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
      ur = [(u(1)+u(2))/2 (u(1)-u(2))/2 u(3) u(4)]'; % Converting to F1,F2 form
@@ -161,7 +162,7 @@ xlabel('t (s)')
 
 % Figure 3 - body angle theta
 figure(3)
-plot(tRec,xRec(3,:)*180/pi);
+plot(tRec,xRec(3,:)*180/pi); % *180/pi
 title('Body angle theta')
 ylabel('theta (deg)')
 xlabel('t (s)')
