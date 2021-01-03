@@ -88,15 +88,15 @@ rank(ctrb(A,B)) % This should equal the number of states - 6
 
 % LQR Control
 Q = [100 0 0 0 0 0;          % X pos
-     0 100 0 0 0 0;          % Y pos
+     0 1e7 0 0 0 0;          % Y pos
      0 0 1e7 0  0 0;         % Theta
      0 0 0 100 0  0;          % Vx
-     0 0 0 0 100 0;           % Vy
+     0 0 0 0 1e7 0;           % Vy
      0 0 0 0 0 1e7];          % d(Theta)/dt
-R = [100 0 0 0;              % u1 = f1+f2
+R = [1 0 0 0;              % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
-     0 0 0 1000000];            % Psi 
+     0 0 0 1e9];            % Psi 
 K = lqr(A, B, Q, R);
 
 %% Continuous Time Control
@@ -108,12 +108,13 @@ initial(sys, y0)
 %% Discrete Time Control
 Ustar = [0 0 m*g 0]'; % control at the point of linearization  
 ystar = [500, 1000, 0, 0, 0, 0]'; %state space point of linearization
+% ystar = [720, 820, 0, 0, 0, 0]'; %state space point of linearization
 y0 =  [520, 800, 0, 0, 0, 0]'; %initial state  
 dt=0.01;
 xRec=[];
 tRec=[];
 urec=[];
-for i=1:5000
+for i=1:6000
      u = -K*(y0-ystar);% feedback control (small signals) 
      % defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
      ur = [(u(1)+u(2))/2 (u(1)-u(2))/2 u(3) u(4)]'; % Converting to F1,F2 form
