@@ -9,20 +9,11 @@ clc;
 close all;
 
 %% Initialize Vehicle Constants
-% Original Constants
-% w = 10;             % width of rocket
-% L = 40;             % length of rocket
-% bL = 10;            % distance from center of rocket to center of mass
-% m = 100;            % mass of rocket
-% g = 9.81;           % acceleration due to gravity
-% Fw = m*g;        % weight of rocket
-% I = 0.5*m*(w/2)^2;  % inertia for a cylinder (1/2*m*r^2)
-
 % RLV Physical Constants
-w = 3.7;             % width of rocket (m)
-L = 47.7;             % length of rocket (m)
-bL = 15.0;            % distance from center of rocket to center of mass (m)
-m = 250000.0;            % mass of rocket (kg)
+w = 3.7;            % width of rocket (m)
+L = 47.7;           % length of rocket (m)
+bL = 15.0;          % distance from center of rocket to center of mass (m)
+m = 250000.0;       % mass of rocket (kg)
 g = 9.81;           % acceleration due to gravity (m/s^2)
 Fw = m*g;           % weight of rocket (N)
 I = 0.5*m*(w/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
@@ -87,13 +78,13 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 6
 
 % LQR Control
-Q = [100 0 0 0 0 0;          % X pos
-     0 1e7 0 0 0 0;          % Y pos
-     0 0 1e7 0  0 0;         % Theta
-     0 0 0 100 0  0;          % Vx
-     0 0 0 0 1e7 0;           % Vy
-     0 0 0 0 0 1e7];          % d(Theta)/dt
-R = [1 0 0 0;              % u1 = f1+f2
+Q = [100 0 0 0 0 0;         % X pos
+     0 1e7 0 0 0 0;         % Y pos
+     0 0 1e7 0  0 0;        % Theta
+     0 0 0 100 0  0;        % Vx
+     0 0 0 0 1e7 0;         % Vy
+     0 0 0 0 0 1e7];        % d(Theta)/dt
+R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
      0 0 0 1e9];            % Psi 

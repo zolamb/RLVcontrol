@@ -11,13 +11,13 @@ close all;
 
 %% Initialize Vehicle Constants
 % RLV Physical Constants
-w = 3.7;             % width of rocket (m)
-L = 47.7;             % length of rocket (m)
-bL = 15.0;            % distance from center of rocket to center of mass (m)
-m = 250000.0;            % mass of rocket (kg)
-g = 9.81;           % acceleration due to gravity (m/s^2)
-Fw = m*g;           % weight of rocket (N)
-I = 0.5*m*(w/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
+w = 3.7;                % width of rocket (m)
+L = 47.7;               % length of rocket (m)
+bL = 15.0;              % distance from center of rocket to center of mass (m)
+m = 250000.0;           % mass of rocket (kg)
+g = 9.81;               % acceleration due to gravity (m/s^2)
+Fw = m*g;               % weight of rocket (N)
+I = 0.5*m*(w/2)^2;      % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 
 %% Natural Response - Case 1
 % Expected Result - Flies straight up
