@@ -1,27 +1,44 @@
+% Clear previous results
 clear;
 clc;
-% y0 = [sqrt(2) -pi/4 -pi];
-y0 = [-1 1 3*pi/4];
-dt = 0.01;
 
+% Initial conditions
+y0Polar = [sqrt(2) -pi/4 -pi];
+y0Cartesian = [-1 1 3*pi/4];
+
+% Control vars
 u = 0;
 w = 0;
 
-yrec = [];
+% Gains
+gamma = 3;
+h = 1;
+k = 6;
 
-for i=1:10000
-    [t, y] = ode45(@(t,y)odeFunction3(y, u, w), [0 dt], y0);
-    e = sqrt(y(end,1)^2 + y(end,2)^2);
-    theta = atan(y(end,2)/y(end,1));
-    alpha = theta - y(end,3);
-    u = 3*e*cos(alpha);
-    w = 6*alpha + 3*cos(alpha)*sin(alpha)*(alpha+1*theta)/alpha;
-    yrec = [yrec, y'];
-    y0 = y(end,:)';
+% Timestep
+dt = 0.1;
+
+yrec = [];
+for i=1:100
+    % Solve polar ODE for small timestep
+    [t, y] = ode45(@(t,y)odeFunction2(y, gamma, h, k), [0 dt], y0Polar);
+    y0Polar = y(end,:)';
+    
+    % Extract e,alpha,theta from last values of ODE solution
+    e = y0Polar(1);
+    alpha = y0Polar(2);
+    theta = y0Polar(3);
+    
+    % Find new u,w using the above values
+    u = gamma*e*cos(alpha);
+    w = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
+    
+    % Solve cartesian ODE for small timestep
+    [t, y2] = ode45(@(t,y2)odeFunction3(y2, u, w), [0 dt], y0Cartesian);
+    yrec = [yrec, y2'];
+    y0Cartesian = y2(end,:)';
 end
 
-% polarplot(y(:,3), y(:,1))
-plot(yrec(:,1), yrec(:,2))
+% Plot cartesian results
+plot(yrec(1,:), yrec(2,:))
 
-% Simulate using eq.1
-% calculate new u,w with the new x,y from simulating eq.1
