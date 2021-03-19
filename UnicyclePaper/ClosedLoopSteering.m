@@ -17,9 +17,6 @@ gamma = 3;
 h = 1;
 k = 6;
 
-u = sqrt(2)*gamma*cos(-pi);
-w = k*-pi + gamma*cos(-pi)*sin(-pi)*(-pi + h*(-pi/4));
-
 % Timestep
 dt = 0.01;
 
