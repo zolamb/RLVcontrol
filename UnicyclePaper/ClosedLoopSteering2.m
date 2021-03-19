@@ -3,7 +3,7 @@ clear;
 clc;
 
 % Target parking pose:
-xP=5; yP=-5; thetaP=0; % we will use it in formulas for e and alpha
+xP=-10; yP=-5; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=-1; y=1; phi=3*pi/4;
@@ -17,9 +17,6 @@ gamma = 3;
 h = 1;
 k = 6;
 
-u = sqrt(2)*gamma*cos(-pi);
-w = k*-pi + gamma*cos(-pi)*sin(-pi)*(-pi + h*(-pi/4));
-
 % Timestep
 dt = 0.01;
 
@@ -32,11 +29,11 @@ for i=1:500
     % phi - robot heading, theta - heading of the parking pose
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
     
-    theta=atan2(yP-y,xP-x)-thetaP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
+    theta=atan2(yP-y,xP-x)-thetaP;
 %     theta=atan2(yP-y,xP-x);
-    alpha=theta-(phi-thetaP);
+    alpha=theta-(phi-thetaP); 
 %     alpha=theta-phi;
-    alpha=atan2(sin(alpha),cos(alpha));
+    alpha=atan2(sin(alpha),cos(alpha)); 
 
     % Update controls
     u = gamma*e*cos(alpha);
