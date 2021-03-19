@@ -3,17 +3,20 @@ clear;
 clc;
 
 % Initial conditions
-y0Polar = [sqrt(2) -pi/4 -pi];
+y0Polar = [sqrt(2) -pi -pi/4];
 y0Cartesian = [-1 1 3*pi/4];
 
 % Control vars
-u = 0;
-w = 0;
+% u = 0;
+% w = 0;
 
 % Gains
 gamma = 3;
 h = 1;
 k = 6;
+
+u = sqrt(2)*gamma*cos(-pi);
+w = k*-pi + gamma*cos(-pi)*sin(-pi)*(-pi + h*(-pi/4));
 
 % Timestep
 dt = 0.1;
