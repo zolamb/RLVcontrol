@@ -2,11 +2,6 @@
 clear;
 clc;
 
-
-
-
-
-
 %% Initialize Vehicle Constants
 % RLV Physical Constants
 w = 3.7;            % width of rocket (m)
@@ -17,7 +12,7 @@ g = 9.81;           % acceleration due to gravity (m/s^2)
 Fw = m*g;           % weight of rocket (N)
 I = 0.5*m*(w/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 
-%% Create System of ODE's
+%% Create System of ODE's for u,w,theta
 % State variables: x1 x2 x3
 %       x1 -> vel
 %       x2 -> angular vel
@@ -65,7 +60,7 @@ D = [0 0 0 0;
 
 %% LQR Controller Design
 % Determine controllability
-rank(ctrb(A,B)) % This should equal the number of states - 6
+rank(ctrb(A,B)) % This should equal the number of states - 3
 
 % LQR Control
 Q = [100 0 0;         % vel
@@ -80,27 +75,21 @@ K = lqr(A, B, Q, R);
 
 
 
-
-
-
-
-
-
-
+%% Control Block Design
 % Target parking pose:
 xP=5; yP=-5; thetaP=0; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=-1; y=1; phi=3*pi/4;
 
-% Control vars
-u = 0;      % Speed
-w = 0;      % Angular speed
-
 % Gains
 gamma = 3;
 h = 1;
 k = 6;
+
+
+% Initial condition for 
+
 
 % Timestep
 dt = 0.01;
@@ -118,31 +107,49 @@ for i=1:500
     
     
     %%%%% Update Controls %%%%
-    u = gamma*e*cos(alpha);
+    uRef = gamma*e*cos(alpha);
     if alpha <= 1e-50
       % lim alpha->0 (cos(alpha)*sin(alpha)/alpha) = 1
-      w = k*alpha + gamma*cos(alpha)*sin(alpha)+...
+      wRef = k*alpha + gamma*cos(alpha)*sin(alpha)+...
           gamma*h*theta;
     else
-      w = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
+      wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
     
     
-    %%%% Solve Cartesian ODE %%%%
-    % Update initial conditions
-    y2Init=[x;y;phi];
     
-    % Solve cartesian ODE for small timestep
-    [t, y2] = ode45(@(t,y2)odeFunction2(y2, u, w), [0 dt], y2Init);
     
+    
+    %%%% Compute u = -K(y0-ystar)  --> (u1,u2,ft,psi)
+    %%%% convert to (f1,f2,ft,psi)
+    %%%% apply saturations
+    %%%% solve ODE for x1...x6 (this is the true position using actuators)(MIGHT NEED TO make theta-90)
+    %%%% compute actual u,w from the solution (u=sqrt(dotx^2 + doty^2),w=dotTheta)
+    %%%% Repeat
+    
+    
+    
+    
+    % --------------------NOT DOING THIS ODE SOLUTION----------------------
+%     %%%% Solve Cartesian ODE %%%%
+%     % Update initial conditions
+%     y2Init=[x;y;phi];
+%     
+%     % Solve cartesian ODE for small timestep
+%     [t, y2] = ode45(@(t,y2)odeFunction2(y2, uRef, wRef), [0 dt], y2Init);
+    % --------------------NOT DOING THIS ODE SOLUTION----------------------
     % Record results
-    yrec = [yrec, y2'];
-    trec=[trec;t+(i-1)*dt*ones(1,length(t))'];
-    x=y2(end,1);
-    y=y2(end,2);
-    phi=y2(end,3);
-    urec=[urec u*ones(1,length(y2))];
-    wrec=[wrec w*ones(1,length(y2))];
+%     yrec = [yrec, y2'];
+%     trec=[trec;t+(i-1)*dt*ones(1,length(t))'];
+%     x=y2(end,1);
+%     y=y2(end,2);
+%     phi=y2(end,3);
+%     urec=[urec u*ones(1,length(y2))];
+%     wrec=[wrec w*ones(1,length(y2))];
+    % --------------------NOT DOING THIS RECORDING ------------------------
+    
+    
+    
 end
 
 % Plot cartesian results
