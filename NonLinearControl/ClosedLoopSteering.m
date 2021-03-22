@@ -88,7 +88,10 @@ h = 1;
 k = 6;
 
 
-% Initial condition for 
+% Initial conditions array form
+Ustar = [0 0 m*g 0]'; % control at the point of linearization 
+ystar = [0, 0, 0]'; %state space point of linearization % Target parking pose
+y0 =  [-1, 1, 3*pi/4]'; %initial state  
 
 
 % Timestep
@@ -121,6 +124,29 @@ for i=1:500
     
     
     %%%% Compute u = -K(y0-ystar)  --> (u1,u2,ft,psi)
+    ystar = [uRef, wRef, theta]; % BUT DONT WANT TO CONTROL WHERE THETA GOES TO?
+    y0 = [u, w, theta];
+    
+    u = -K*(y0-ystar);% feedback control (small signals) 
+     % defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
+     ur = [(u(1)+u(2))/2 (u(1)-u(2))/2 u(3) u(4)]'; % Converting to F1,F2 form
+     U=Ustar+ur; % U rocket control (large signals)
+     % control saturations (Physical Limitations ?)
+     if U(3,1)>3*m*g
+         U(3,1)=3*m*g;
+     elseif U(3,1)<=0
+        U(3,1)=0; 
+     else
+        U(3,1)=U(3,1);
+     end
+     if U(4,1)>pi/30 % 6 degrees
+        U(4,1)=pi/30;
+     elseif U(4,1)<-pi/30
+        U(4,1)=-pi/30; 
+     else
+        U(4,1)=U(4,1);
+     end
+     
     %%%% convert to (f1,f2,ft,psi)
     %%%% apply saturations
     %%%% solve ODE for x1...x6 (this is the true position using actuators)(MIGHT NEED TO make theta-90)
@@ -132,21 +158,20 @@ for i=1:500
     
     % --------------------NOT DOING THIS ODE SOLUTION----------------------
 %     %%%% Solve Cartesian ODE %%%%
-%     % Update initial conditions
-%     y2Init=[x;y;phi];
-%     
-%     % Solve cartesian ODE for small timestep
-%     [t, y2] = ode45(@(t,y2)odeFunction2(y2, uRef, wRef), [0 dt], y2Init);
+    % Update initial conditions
+    y2Init=[x;y;phi];
+    
+    % Solve cartesian ODE for small timestep
+    [t, y2] = ode45(@(t,y2)odeFunction2(y2, uRef, wRef), [0 dt], y2Init);
     % --------------------NOT DOING THIS ODE SOLUTION----------------------
     % Record results
-%     yrec = [yrec, y2'];
-%     trec=[trec;t+(i-1)*dt*ones(1,length(t))'];
-%     x=y2(end,1);
-%     y=y2(end,2);
-%     phi=y2(end,3);
-%     urec=[urec u*ones(1,length(y2))];
-%     wrec=[wrec w*ones(1,length(y2))];
-    % --------------------NOT DOING THIS RECORDING ------------------------
+    yrec = [yrec, y2'];
+    trec=[trec;t+(i-1)*dt*ones(1,length(t))'];
+    x=y2(end,1);
+    y=y2(end,2);
+    phi=y2(end,3);
+    urec=[urec uRef*ones(1,length(y2))];
+    wrec=[wrec wRef*ones(1,length(y2))];
     
     
     
