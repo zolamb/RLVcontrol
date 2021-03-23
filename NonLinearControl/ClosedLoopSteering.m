@@ -4,13 +4,13 @@ clc;
 
 %% Initialize Vehicle Constants
 % RLV Physical Constants
-w = 3.7;            % width of rocket (m)
+width = 3.7;            % width of rocket (m)
 L = 47.7;           % length of rocket (m)
 bL = 15.0;          % distance from center of rocket to center of mass (m)
 m = 250000.0;       % mass of rocket (kg)
 g = 9.81;           % acceleration due to gravity (m/s^2)
 Fw = m*g;           % weight of rocket (N)
-I = 0.5*m*(w/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
+I = 0.5*m*(width/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 
 %% Create System of ODE's for u,w,theta
 % State variables: x1 x2 x3
@@ -29,7 +29,7 @@ syms u1 u2 Ft psi
 % State Space
 ddotX = -(u1)/m*sin(x3) - (Ft/m)*sin(x3 + psi);
 ddotY = (u1)/m*cos(x3) + (Ft/m)*cos(x3 + psi) - Fw/m;
-ddotTheta = (w/(2*I))*(u2) - (Ft/I)*(L/2 - bL)*sin(psi);
+ddotTheta = (width/(2*I))*(u2) - (Ft/I)*(L/2 - bL)*sin(psi);
 F = [sqrt(ddotX^2 + ddotY^2);
      ddotTheta;
      x2 
@@ -41,16 +41,16 @@ stateVars = [x1 x2 x3];
 controlVars = [u1 u2 Ft psi];
 
 % Take partial derivatives of F with respect to states
-A = jacobian(F, stateVars);
+Ax = jacobian(F, stateVars);
 
 % Take partial derivatives of F with respect to control inputs
-B = jacobian(F, controlVars);
+Bx = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
 p = [0 0 0 0 0 0 0];
 v = [x1 x2 x3 u1 u2 Ft psi];
-A = double(subs(A,v,p));
-B = double(subs(B,v,p));
+A = double(subs(Ax,v,p));
+B = double(subs(Bx,v,p));
 C = [1 0 0;
      0 1 0;
      0 0 1];
@@ -65,7 +65,7 @@ rank(ctrb(A,B)) % This should equal the number of states - 3
 % LQR Control
 Q = [100 0 0;         % vel
      0 1e7 0;         % angular vel
-     0 0 1e7];              % angle pos.
+     0 0 0];              % angle pos.
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
@@ -87,27 +87,32 @@ gamma = 3;
 h = 1;
 k = 6;
 
+% Initial u,w
+u = 0;
+w = 0;
 
 % Initial conditions array form
-Ustar = [0 0 m*g 0]'; % control at the point of linearization 
+Ustar = [0 0 0 0]'; % control at the point of linearization 
 ystar = [0, 0, 0]'; %state space point of linearization % Target parking pose
-y0 =  [-1, 1, 3*pi/4]'; %initial state  
+y1Init =  [-1, 1, (3*pi/4) - (pi/2), 0, 0, 0]'; %initial state  
 
 
 % Timestep
 dt = 0.01;
 
-yrec = [];
+yrec1 = [];
+yrec2 = [];
+actuatorsRec = [];
 urec = [];
 wrec = [];
-trec=[];
+trec1 = [];
+trec2 = [];
 for i=1:500
     %%%% Compute e, alpha, and theta %%%%
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-thetaP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
     alpha=theta-(phi-thetaP);
     alpha=atan2(sin(alpha),cos(alpha));
-    
     
     %%%%% Update Controls %%%%
     uRef = gamma*e*cos(alpha);
@@ -123,55 +128,65 @@ for i=1:500
     
     
     
-    %%%% Compute u = -K(y0-ystar)  --> (u1,u2,ft,psi)
-    ystar = [uRef, wRef, theta]; % BUT DONT WANT TO CONTROL WHERE THETA GOES TO?
-    y0 = [u, w, theta];
+    %%%%%%%%%%%%%%%%%% WHILE U,W REF NOT = U,W %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    u = -K*(y0-ystar);% feedback control (small signals) 
-     % defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
-     ur = [(u(1)+u(2))/2 (u(1)-u(2))/2 u(3) u(4)]'; % Converting to F1,F2 form
-     U=Ustar+ur; % U rocket control (large signals)
-     % control saturations (Physical Limitations ?)
-     if U(3,1)>3*m*g
-         U(3,1)=3*m*g;
-     elseif U(3,1)<=0
-        U(3,1)=0; 
-     else
-        U(3,1)=U(3,1);
-     end
-     if U(4,1)>pi/30 % 6 degrees
-        U(4,1)=pi/30;
-     elseif U(4,1)<-pi/30
-        U(4,1)=-pi/30; 
-     else
-        U(4,1)=U(4,1);
-     end
-     
-    %%%% convert to (f1,f2,ft,psi)
-    %%%% apply saturations
-    %%%% solve ODE for x1...x6 (this is the true position using actuators)(MIGHT NEED TO make theta-90)
-    %%%% compute actual u,w from the solution (u=sqrt(dotx^2 + doty^2),w=dotTheta)
-    %%%% Repeat
+    %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
+    ystar = [uRef, wRef, 0]'; % BUT DONT WANT TO CONTROL WHERE THETA GOES TO?
+    y0 = [u, w, 0]';
     
+    % uK defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
+    uK = -K*(y0-ystar);
+    % Converting to F1,F2 form
+    uK = [(uK(1)+uK(2))/2 (uK(1)-uK(2))/2 uK(3) uK(4)]';
+    U=Ustar+uK; % U rocket control (linear control)
     
+    % Apply saturations
+    if U(3,1)>3*m*g
+        U(3,1)=3*m*g;
+    elseif U(3,1)<=0
+       U(3,1)=0; 
+    else
+       U(3,1)=U(3,1);
+    end
+    if U(4,1)>pi/30 % 6 degrees
+       U(4,1)=pi/30;
+    elseif U(4,1)<-pi/30
+       U(4,1)=-pi/30; 
+    else
+       U(4,1)=U(4,1);
+    end
     
+    % Solve ODE for new position
+    [t, y1] = ode45(@(t,y1)odeFunction(y1, w, L, bL, m, Fw, I, U), [0 dt], y1Init); %%% THINK ABOUT THETA - 90deg.
     
-    % --------------------NOT DOING THIS ODE SOLUTION----------------------
-%     %%%% Solve Cartesian ODE %%%%
-    % Update initial conditions
-    y2Init=[x;y;phi];
+    % Store last x,y,phi position and solve for current u,w
+    x=y1(end,1);
+    y=y1(end,2);
+    phi=y1(end,3); % May need -90deg. %%%%%%%%%%%%%%%
+    x_dot = y1(end,4);
+    y_dot = y1(end,5);
+    phi_dot = y1(end,6);
+    u = sqrt(x_dot^2 + y_dot^2);
+    w = phi_dot;
     
-    % Solve cartesian ODE for small timestep
-    [t, y2] = ode45(@(t,y2)odeFunction2(y2, uRef, wRef), [0 dt], y2Init);
-    % --------------------NOT DOING THIS ODE SOLUTION----------------------
     % Record results
-    yrec = [yrec, y2'];
-    trec=[trec;t+(i-1)*dt*ones(1,length(t))'];
-    x=y2(end,1);
-    y=y2(end,2);
-    phi=y2(end,3);
-    urec=[urec uRef*ones(1,length(y2))];
-    wrec=[wrec wRef*ones(1,length(y2))];
+    yrec1=[yrec1,y1'];
+    trec1=[trec1, (i-1)*dt+t'];
+    tmp=[ones(1,length(t))*U(1,1);
+         ones(1,length(t))*U(2,1);
+         ones(1,length(t))*U(3,1);
+         ones(1,length(t))*U(4,1)];
+    actuatorsRec=[actuatorsRec tmp];
+    y1Init = y1(end,:)';
+    
+    
+    urec=[urec u*ones(1,length(y2))];
+    wrec=[wrec w*ones(1,length(y2))];
+    
+    
+    %%%%%%%%%%%%%%%%%% WHILE U,W REF NOT = U,W %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+   
     
     
     
@@ -179,10 +194,10 @@ end
 
 % Plot cartesian results
 figure(1)
-plot(yrec(1,:), yrec(2,:))
+plot(yrec2(1,:), yrec2(2,:))
 axis equal
 figure(2)
-plot(trec,yrec(3,:)*180/pi)
+plot(trec,yrec2(3,:)*180/pi)
 figure(3)
 plot(trec,urec)
 figure(4)
