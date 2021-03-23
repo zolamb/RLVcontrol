@@ -63,9 +63,9 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 3
 
 % LQR Control
-Q = [100 0 0;         % vel
-     0 1e7 0;         % angular vel
-     0 0 0];              % angle pos.
+Q = [1e6 0 0;               % vel
+     0 1e11 0;               % angular vel
+     0 0 0];                % angle pos. = 0 because it doesn't matter
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
@@ -93,20 +93,25 @@ w = 0;
 
 % Initial conditions array form
 Ustar = [0 0 0 0]'; % control at the point of linearization 
-ystar = [0, 0, 0]'; %state space point of linearization % Target parking pose
+ystar = [0, 0, 0]'; % uRef, wRef, 0
 y1Init =  [-1, 1, (3*pi/4) - (pi/2), 0, 0, 0]'; %initial state  
 
 
 % Timestep
 dt = 0.01;
 
+% Data recordings
 yrec1 = [];
-yrec2 = [];
+trec1 = [];
 actuatorsRec = [];
 urec = [];
 wrec = [];
-trec1 = [];
-trec2 = [];
+
+% uRef,wRef error tolerance ~ 1m/s,5deg/s
+uReferrorTolerance = 1;
+wReferrorTolerance = 5*pi/180;
+
+% Control Loop
 for i=1:500
     %%%% Compute e, alpha, and theta %%%%
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
@@ -125,80 +130,72 @@ for i=1:500
     end
     
     
-    
-    
-    
-    %%%%%%%%%%%%%%%%%% WHILE U,W REF NOT = U,W %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
-    ystar = [uRef, wRef, 0]'; % BUT DONT WANT TO CONTROL WHERE THETA GOES TO?
-    y0 = [u, w, 0]';
-    
-    % uK defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
-    uK = -K*(y0-ystar);
-    % Converting to F1,F2 form
-    uK = [(uK(1)+uK(2))/2 (uK(1)-uK(2))/2 uK(3) uK(4)]';
-    U=Ustar+uK; % U rocket control (linear control)
-    
-    % Apply saturations
-    if U(3,1)>3*m*g
-        U(3,1)=3*m*g;
-    elseif U(3,1)<=0
-       U(3,1)=0; 
-    else
-       U(3,1)=U(3,1);
+    % Loop the actuator commands to get to uRef,wRef
+    while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
+        disp(u);
+        %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
+        ystar = [uRef, wRef, 0]';
+        y0 = [u, w, 0]';
+
+        % uK defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
+        uK = -K*(y0-ystar);
+        % Converting to F1,F2 form
+        uK = [(uK(1)+uK(2))/2 (uK(1)-uK(2))/2 uK(3) uK(4)]';
+        U=Ustar+uK; % U rocket control (linear control)
+
+        % Apply saturations
+        if U(3,1)>3*m*g
+            U(3,1)=3*m*g;
+        elseif U(3,1)<=0
+           U(3,1)=0; 
+        else
+           U(3,1)=U(3,1);
+        end
+        if U(4,1)>pi/30 % 6 degrees
+           U(4,1)=pi/30;
+        elseif U(4,1)<-pi/30
+           U(4,1)=-pi/30; 
+        else
+           U(4,1)=U(4,1);
+        end
+
+        % Solve ODE for new position
+        [t, y1] = ode45(@(t,y1)odeFunction2(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init); %%% THINK ABOUT THETA - 90deg.
+
+        % Store last x,y,phi position and solve for current u,w
+        x=y1(end,1);
+        y=y1(end,2);
+        phi=y1(end,3); % May need y1(end,3)-90deg. %%%%%%%%%%%%%%%
+        x_dot = y1(end,4);
+        y_dot = y1(end,5);
+        phi_dot = y1(end,6);
+        u = sqrt(x_dot^2 + y_dot^2);
+        w = phi_dot;
+
+        % Record results
+        yrec1=[yrec1,y1'];
+        trec1=[trec1, (i-1)*dt+t'];
+%         tmp=[ones(1,length(t))*U(1,1);
+%              ones(1,length(t))*U(2,1);
+%              ones(1,length(t))*U(3,1);
+%              ones(1,length(t))*U(4,1)];
+%         actuatorsRec=[actuatorsRec tmp];
+%         urec=[urec u*ones(1,length(y1))];
+%         wrec=[wrec w*ones(1,length(y1))];
+        
+        % Create new initial conditions array
+        y1Init = y1(end,:)'; % May need y1(end,3)-90deg. %%%%%%%%%%%%%%% Probably not here tho
     end
-    if U(4,1)>pi/30 % 6 degrees
-       U(4,1)=pi/30;
-    elseif U(4,1)<-pi/30
-       U(4,1)=-pi/30; 
-    else
-       U(4,1)=U(4,1);
-    end
-    
-    % Solve ODE for new position
-    [t, y1] = ode45(@(t,y1)odeFunction(y1, w, L, bL, m, Fw, I, U), [0 dt], y1Init); %%% THINK ABOUT THETA - 90deg.
-    
-    % Store last x,y,phi position and solve for current u,w
-    x=y1(end,1);
-    y=y1(end,2);
-    phi=y1(end,3); % May need -90deg. %%%%%%%%%%%%%%%
-    x_dot = y1(end,4);
-    y_dot = y1(end,5);
-    phi_dot = y1(end,6);
-    u = sqrt(x_dot^2 + y_dot^2);
-    w = phi_dot;
-    
-    % Record results
-    yrec1=[yrec1,y1'];
-    trec1=[trec1, (i-1)*dt+t'];
-    tmp=[ones(1,length(t))*U(1,1);
-         ones(1,length(t))*U(2,1);
-         ones(1,length(t))*U(3,1);
-         ones(1,length(t))*U(4,1)];
-    actuatorsRec=[actuatorsRec tmp];
-    y1Init = y1(end,:)';
-    
-    
-    urec=[urec u*ones(1,length(y2))];
-    wrec=[wrec w*ones(1,length(y2))];
-    
-    
-    %%%%%%%%%%%%%%%%%% WHILE U,W REF NOT = U,W %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
    
-    
-    
-    
 end
 
 % Plot cartesian results
 figure(1)
-plot(yrec2(1,:), yrec2(2,:))
+plot(yrec1(1,:), yrec1(2,:))
 axis equal
-figure(2)
-plot(trec,yrec2(3,:)*180/pi)
-figure(3)
-plot(trec,urec)
-figure(4)
-plot(trec,wrec)
+% figure(2)
+% plot(trec,yrec2(3,:)*180/pi)
+% figure(3)
+% plot(trec,urec)
+% figure(4)
+% plot(trec,wrec)
