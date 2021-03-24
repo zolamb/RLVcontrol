@@ -107,9 +107,9 @@ actuatorsRec = [];
 urec = [];
 wrec = [];
 
-% uRef,wRef error tolerance ~ 1m/s,5deg/s
-uReferrorTolerance = 1;
-wReferrorTolerance = 5*pi/180;
+% uRef,wRef error tolerance ~ 0.1m/s,0.1deg/s
+uReferrorTolerance = 0.1;
+wReferrorTolerance = 0.1*pi/180;
 
 % Control Loop
 for i=1:500
