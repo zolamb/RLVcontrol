@@ -5,11 +5,11 @@ clc;
 %% Initialize Vehicle Constants
 % RLV Physical Constants
 width = 3.7;            % width of rocket (m)
-L = 47.7;           % length of rocket (m)
-bL = 15.0;          % distance from center of rocket to center of mass (m)
-m = 250000.0;       % mass of rocket (kg)
-g = 9.81;           % acceleration due to gravity (m/s^2)
-Fw = m*g;           % weight of rocket (N)
+L = 47.7;               % length of rocket (m)
+bL = 15.0;              % distance from center of rocket to center of mass (m)
+m = 250000.0;           % mass of rocket (kg)
+g = 9.81;               % acceleration due to gravity (m/s^2)
+Fw = m*g;               % weight of rocket (N)
 I = 0.5*m*(width/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 
 %% Create System of ODE's for u,w,theta
@@ -63,9 +63,9 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 3
 
 % LQR Control
-Q = [1e6 0 0;               % vel
+Q = [1e10 0 0;               % vel
      0 1e11 0;               % angular vel
-     0 0 0];                % angle pos. = 0 because it doesn't matter
+     0 0 0];                % angle pos. = 0 because it doesn't matters
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
@@ -96,7 +96,6 @@ Ustar = [0 0 0 0]'; % control at the point of linearization
 ystar = [0, 0, 0]'; % uRef, wRef, 0
 y1Init =  [-1, 1, (3*pi/4) - (pi/2), 0, 0, 0]'; %initial state  
 
-
 % Timestep
 dt = 0.01;
 
@@ -112,7 +111,7 @@ uReferrorTolerance = 0.1;
 wReferrorTolerance = 0.1*pi/180;
 
 % Control Loop
-for i=1:500
+for i=1:100
     %%%% Compute e, alpha, and theta %%%%
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-thetaP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
@@ -131,8 +130,9 @@ for i=1:500
     
     
     % Loop the actuator commands to get to uRef,wRef
-    while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
-        disp(u);
+%     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
+    for j=1:50
+%         disp(u);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [uRef, wRef, 0]';
         y0 = [u, w, 0]';
@@ -165,7 +165,7 @@ for i=1:500
         % Store last x,y,phi position and solve for current u,w
         x=y1(end,1);
         y=y1(end,2);
-        phi=y1(end,3); % May need y1(end,3)-90deg. %%%%%%%%%%%%%%%
+        phi=y1(end,3) - pi/2;
         x_dot = y1(end,4);
         y_dot = y1(end,5);
         phi_dot = y1(end,6);
@@ -175,18 +175,18 @@ for i=1:500
         % Record results
         yrec1=[yrec1,y1'];
         trec1=[trec1, (i-1)*dt+t'];
-%         tmp=[ones(1,length(t))*U(1,1);
-%              ones(1,length(t))*U(2,1);
-%              ones(1,length(t))*U(3,1);
-%              ones(1,length(t))*U(4,1)];
-%         actuatorsRec=[actuatorsRec tmp];
+        tmp=[ones(1,length(t))*U(1,1);
+             ones(1,length(t))*U(2,1);
+             ones(1,length(t))*U(3,1);
+             ones(1,length(t))*U(4,1)];
+        actuatorsRec=[actuatorsRec tmp];
 %         urec=[urec u*ones(1,length(y1))];
 %         wrec=[wrec w*ones(1,length(y1))];
         
         % Create new initial conditions array
         y1Init = y1(end,:)'; % May need y1(end,3)-90deg. %%%%%%%%%%%%%%% Probably not here tho
     end
-   
+   disp("here")
 end
 
 % Plot cartesian results
