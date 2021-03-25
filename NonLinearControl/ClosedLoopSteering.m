@@ -27,8 +27,8 @@ syms x1 x2 x3
 syms u1 u2 Ft psi
 
 % State Space
-ddotX = -(u1)/m*sin(x3) - (Ft/m)*sin(x3 + psi);
-ddotY = (u1)/m*cos(x3) + (Ft/m)*cos(x3 + psi) - Fw/m;
+ddotX = (u1/m)*cos(x3) + (Ft/m)*cos(x3 + psi);
+ddotY = (u1/m)*sin(x3) + (Ft/m)*sin(x3 + psi) - Fw/m;
 ddotTheta = (width/(2*I))*(u2) - (Ft/I)*(L/2 - bL)*sin(psi);
 F = [sqrt(ddotX^2 + ddotY^2);
      ddotTheta;
@@ -47,7 +47,7 @@ Ax = jacobian(F, stateVars);
 Bx = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
-p = [0 0 0 0 0 0 0];
+p = [0 0 0 0 0 m*g 0];
 v = [x1 x2 x3 u1 u2 Ft psi];
 A = double(subs(Ax,v,p));
 B = double(subs(Bx,v,p));
@@ -63,8 +63,8 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 3
 
 % LQR Control
-Q = [1e10 0 0;               % vel
-     0 1e11 0;               % angular vel
+Q = [1e3 0 0;               % vel ---- 1e14 works well to get 'u' down, but 'w' goes up
+     0 1e15 0;               % angular vel 
      0 0 0];                % angle pos. = 0 because it doesn't matters
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
@@ -77,7 +77,7 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=5; yP=-5; thetaP=0; % we will use it in formulas for e and alpha
+xP=5; yP=-5; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=-1; y=1; phi=3*pi/4;
@@ -94,7 +94,7 @@ w = 0;
 % Initial conditions array form
 Ustar = [0 0 0 0]'; % control at the point of linearization 
 ystar = [0, 0, 0]'; % uRef, wRef, 0
-y1Init =  [-1, 1, (3*pi/4) - (pi/2), 0, 0, 0]'; %initial state  
+y1Init =  [-1, 1, (3*pi/4), 0, 0, 0]'; %initial state  
 
 % Timestep
 dt = 0.01;
@@ -130,9 +130,9 @@ for i=1:100
     
     
     % Loop the actuator commands to get to uRef,wRef
-%     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
-    for j=1:50
-%         disp(u);
+    while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
+%     for j=1:50
+        disp(w);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [uRef, wRef, 0]';
         y0 = [u, w, 0]';
@@ -165,7 +165,7 @@ for i=1:100
         % Store last x,y,phi position and solve for current u,w
         x=y1(end,1);
         y=y1(end,2);
-        phi=y1(end,3) - pi/2;
+        phi=y1(end,3);
         x_dot = y1(end,4);
         y_dot = y1(end,5);
         phi_dot = y1(end,6);

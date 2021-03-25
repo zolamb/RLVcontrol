@@ -6,8 +6,8 @@ function dx = odeFunction(x, w, L, bL, m, Fw, I, u) % first parameter must be to
     Psi=u(4);
 
     % Newtonian set of ODEs
-    ddotX = -(F1+F2)/m*sin(x(3)) - (Ft/m)*sin(x(3) + Psi);
-    ddotY = (F1+F2)/m*cos(x(3)) + (Ft/m)*cos(x(3) + Psi) - Fw/m;
+    ddotX = (F1+F2)/m*cos(x(3)) + (Ft/m)*cos(x(3) + Psi);
+    ddotY = (F1+F2)/m*sin(x(3)) + (Ft/m)*sin(x(3) + Psi) - Fw/m;
     ddotTheta = (w/(2*I))*(F1-F2) - (Ft/I)*(L/2 - bL)*sin(Psi);
 
     % Solve ODEs
