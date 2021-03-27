@@ -3,7 +3,7 @@ clear;
 clc;
 
 % Target parking pose:
-xP=5; yP=-5; thetaP=0; % we will use it in formulas for e and alpha
+xP=-200; yP=1; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=-1; y=1; phi=3*pi/4;

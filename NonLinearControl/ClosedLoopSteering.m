@@ -130,12 +130,12 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 6
 
 % LQR Control
-Q = [0 0 0 0 0 0;         % X pos
-     0 0 0 0 0 0;         % Y pos
-     0 0 0 0  0 0;        % Theta
-     0 0 0 100 0  0;        % Vx
-     0 0 0 0 100 0;         % Vy
-     0 0 0 0 0 100];        % d(Theta)/dt
+Q = [1 0 0 0 0 0;         % X pos
+     0 1 0 0 0 0;         % Y pos
+     0 0 1 0  0 0;        % Theta
+     0 0 0 1e7 0  0;        % Vx
+     0 0 0 0 1e7 0;         % Vy
+     0 0 0 0 0 1e7];        % d(Theta)/dt
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
@@ -144,10 +144,11 @@ K = lqr(A, B, Q, R);
 
 %%%%%% STILL NEED TO TWEAK LQR BECAUSE WE CARE ABOUT VELOCITIES NOW NOT
 %%%%%% POSITION... MAYBE MAKE POSITIONS IN Q MATRIX ZERO
+K = K(1:4, 4:6);
 
 %% Control Block Design
 % Target parking pose:
-xP=5; yP=-5; thetaP=pi/2; % we will use it in formulas for e and alpha
+xP=-200; yP=1; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=-1; y=1; phi=3*pi/4;
@@ -186,7 +187,7 @@ wrec = [];
 % wReferrorTolerance = 0.1*pi/180;
 
 % Control Loop
-for i=1:50
+for i=1:25
     %%%% Compute e, alpha, and theta %%%%
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-thetaP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
@@ -221,7 +222,12 @@ for i=1:50
         ystar = [0, 0, 0, x_dot_ref, y_dot_ref, phi_dot_ref]';
         y0 = [x, y, phi, x_dot, y_dot, phi_dot]';
         
+        %%%%%% 
         
+        ystar = [x_dot_ref, y_dot_ref, phi_dot_ref]';
+        y0 = [x_dot, y_dot, phi_dot]';
+        
+        %%%%%%
         
         % uK defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
         uK = -K*(y0-ystar);
@@ -249,17 +255,17 @@ for i=1:50
         [t, y1] = ode45(@(t,y1)odeFunction3(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init); %%% THINK ABOUT THETA - 90deg.
 
         % Store last x,y,phi position and solve for current u,w
-        x=y1(end,1);
-        y=y1(end,2);
-        phi=y1(end,3);
-        x_dot = y1(end,4);
-        y_dot = y1(end,5);
-        phi_dot = y1(end,6);
+        x=real(y1(end,1));
+        y=real(y1(end,2));
+        phi=real(y1(end,3));
+        x_dot = real(y1(end,4));
+        y_dot = real(y1(end,5));
+        phi_dot = real(y1(end,6));
 %         u = sqrt(x_dot^2 + y_dot^2);
 %         w = phi_dot;
 
         % Record results
-        yrec1=[yrec1,y1'];
+        yrec1=[yrec1,real(y1)'];
         trec1=[trec1, (i-1)*dt+t'];
         tmp=[ones(1,length(t))*U(1,1);
              ones(1,length(t))*U(2,1);
