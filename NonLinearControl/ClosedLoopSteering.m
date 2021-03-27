@@ -95,7 +95,7 @@ A = jacobian(F, stateVars);
 B = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
-p = [0 0 0 0 0 0 0 0 m*g 0];
+p = [0 0 pi/2 0 0 0 0 0 m*g 0];
 v = [x1 x2 x3 x4 x5 x6 u1 u2 Ft psi];
 A = double(subs(A,v,p));
 B = double(subs(B,v,p));
@@ -133,18 +133,17 @@ rank(ctrb(A,B)) % This should equal the number of states - 6
 Q = [1 0 0 0 0 0;         % X pos
      0 1 0 0 0 0;         % Y pos
      0 0 1 0  0 0;        % Theta
-     0 0 0 1e7 0  0;        % Vx
-     0 0 0 0 1e7 0;         % Vy
-     0 0 0 0 0 1e7];        % d(Theta)/dt
+     0 0 0 1e10 0  0;        % Vx
+     0 0 0 0 1e10 0;         % Vy
+     0 0 0 0 0 1e16];        % d(Theta)/dt
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
-     0 0 1 0;               % Ft
+     0 0 1e2 0;               % Ft
      0 0 0 1e9];            % Psi 
 K = lqr(A, B, Q, R);
-
 %%%%%% STILL NEED TO TWEAK LQR BECAUSE WE CARE ABOUT VELOCITIES NOW NOT
 %%%%%% POSITION... MAYBE MAKE POSITIONS IN Q MATRIX ZERO
-K = K(1:4, 4:6);
+% K = K(1:4, 4:6);
 
 %% Control Block Design
 % Target parking pose:
@@ -205,17 +204,20 @@ for i=1:25
     end
     
     %%%%% Solve for reference velocities %%%%%
-    x_dot_ref = roots([1, tan(wRef), -uRef^2]); % xdot
-    x_dot_ref = x_dot_ref(1); %%% WHICH ROOT TO CHOOSE?
-    y_dot_ref = sqrt(uRef^2 - x_dot_ref^2);
-    phi_dot_ref = wRef;
+%     x_dot_ref = roots([1, tan(wRef), -uRef^2]); % xdot
+%     x_dot_ref = x_dot_ref(1); %%% WHICH ROOT TO CHOOSE?
+%     y_dot_ref = sqrt(uRef^2 - x_dot_ref^2); %%%%%%%%%%%%%%%%%%%%%%%%%% THIS IS WHERE THE IMAGINARY # IS COMING FROM,, AND THIS CAN NEVER BE NEGATIVE?
+%     phi_dot_ref = wRef;
+    x_dot_ref = sqrt(uRef^2 / (1 + tan(wRef)^2))
+    y_dot_ref = x_dot_ref * tan(wRef)
+    phi_dot_ref = wRef
     
     
     % Loop the actuator commands to get to uRef,wRef
 %     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
-%     while(x_dot ~= x_dot_ref && y_dot ~= y_dot_ref && phi_dot ~= phi_dot_ref)
-    for j=1:50
-%         disp(phi_dot);
+    while(x_dot ~= x_dot_ref && y_dot ~= y_dot_ref && phi_dot ~= phi_dot_ref)
+%     for j=1:50
+        disp(phi_dot);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
 %         ystar = [uRef, wRef, 0]';
 %         y0 = [u, w, 0]';
@@ -224,8 +226,8 @@ for i=1:25
         
         %%%%%% 
         
-        ystar = [x_dot_ref, y_dot_ref, phi_dot_ref]';
-        y0 = [x_dot, y_dot, phi_dot]';
+%         ystar = [x_dot_ref, y_dot_ref, phi_dot_ref]';
+%         y0 = [x_dot, y_dot, phi_dot]';
         
         %%%%%%
         
@@ -252,7 +254,7 @@ for i=1:25
         end
 
         % Solve ODE for new position
-        [t, y1] = ode45(@(t,y1)odeFunction3(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init); %%% THINK ABOUT THETA - 90deg.
+        [t, y1] = ode45(@(t,y1)odeFunction3(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init);
 
         % Store last x,y,phi position and solve for current u,w
         x=real(y1(end,1));
