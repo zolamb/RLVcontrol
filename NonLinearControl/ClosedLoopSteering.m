@@ -47,7 +47,7 @@ Ax = jacobian(F, stateVars);
 Bx = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
-p = [0 0 0 0 0 m*g 0];
+p = [0 0 pi/2 0 0 0 0]; % [0 0 0 0 0 mg 0]
 v = [x1 x2 x3 u1 u2 Ft psi];
 A = double(subs(Ax,v,p));
 B = double(subs(Bx,v,p));
@@ -63,12 +63,12 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 3
 
 % LQR Control
-Q = [1e3 0 0;               % vel ---- 1e14 works well to get 'u' down, but 'w' goes up
-     0 1e15 0;               % angular vel 
+Q = [1e5 0 0;               % vel 1e3, 1e14
+     0 1e14 0;               % angular vel 1e15
      0 0 0];                % angle pos. = 0 because it doesn't matters
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
-     0 0 1 0;               % Ft
+     0 0 1e3 0;               % Ft
      0 0 0 1e9];            % Psi 
 K = lqr(A, B, Q, R);
 
