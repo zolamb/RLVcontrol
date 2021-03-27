@@ -130,15 +130,15 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 6
 
 % LQR Control
-Q = [1 0 0 0 0 0;         % X pos
-     0 1 0 0 0 0;         % Y pos
-     0 0 1 0  0 0;        % Theta
-     0 0 0 1e10 0  0;        % Vx
-     0 0 0 0 1e10 0;         % Vy
-     0 0 0 0 0 1e16];        % d(Theta)/dt
+Q = [1e-6 0 0 0 0 0;         % X pos
+     0 1e-6 0 0 0 0;         % Y pos
+     0 0 1e-6 0  0 0;        % Theta
+     0 0 0 1e8 0  0;        % Vx
+     0 0 0 0 1e8 0;         % Vy
+     0 0 0 0 0 1e12];        % d(Theta)/dt
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
-     0 0 1e2 0;               % Ft
+     0 0 1e4 0;               % Ft
      0 0 0 1e9];            % Psi 
 K = lqr(A, B, Q, R);
 %%%%%% STILL NEED TO TWEAK LQR BECAUSE WE CARE ABOUT VELOCITIES NOW NOT
@@ -215,9 +215,9 @@ for i=1:25
     
     % Loop the actuator commands to get to uRef,wRef
 %     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
-    while(x_dot ~= x_dot_ref && y_dot ~= y_dot_ref && phi_dot ~= phi_dot_ref)
-%     for j=1:50
-        disp(phi_dot);
+%     while(x_dot ~= x_dot_ref && y_dot ~= y_dot_ref && phi_dot ~= phi_dot_ref)
+    for j=1:50
+%         disp(x_dot);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
 %         ystar = [uRef, wRef, 0]';
 %         y0 = [u, w, 0]';
@@ -257,17 +257,17 @@ for i=1:25
         [t, y1] = ode45(@(t,y1)odeFunction3(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init);
 
         % Store last x,y,phi position and solve for current u,w
-        x=real(y1(end,1));
-        y=real(y1(end,2));
-        phi=real(y1(end,3));
-        x_dot = real(y1(end,4));
-        y_dot = real(y1(end,5));
-        phi_dot = real(y1(end,6));
+        x=y1(end,1);
+        y=y1(end,2);
+        phi=y1(end,3);
+        x_dot = y1(end,4);
+        y_dot = y1(end,5);
+        phi_dot = y1(end,6);
 %         u = sqrt(x_dot^2 + y_dot^2);
 %         w = phi_dot;
 
         % Record results
-        yrec1=[yrec1,real(y1)'];
+        yrec1=[yrec1,y1'];
         trec1=[trec1, (i-1)*dt+t'];
         tmp=[ones(1,length(t))*U(1,1);
              ones(1,length(t))*U(2,1);
