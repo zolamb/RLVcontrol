@@ -12,38 +12,15 @@ g = 9.81;               % acceleration due to gravity (m/s^2)
 Fw = m*g;               % weight of rocket (N)
 I = 0.5*m*(width/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 
-% %% Create System of ODE's for u,w,theta
-% % State variables: x1 x2 x3
-% %       x1 -> vel
-% %       x2 -> angular vel
-% %       x3 -> body angle
-% syms x1 x2 x3
-% 
-% % Control variables: u1 u2 Ft psi
-% %       u1 -> F1 + F2
-% %       u2 -> F1 - F2
-% %       Ft -> Thrust
-% %       psi -> Thrust angle
-% syms u1 u2 Ft psi
-% 
-% % State Space
-% ddotX = (u1/m)*cos(x3) + (Ft/m)*cos(x3 + psi);
-% ddotY = (u1/m)*sin(x3) + (Ft/m)*sin(x3 + psi) - Fw/m;
-% ddotTheta = (width/(2*I))*(u2) - (Ft/I)*(L/2 - bL)*sin(psi);
-% F = [sqrt(ddotX^2 + ddotY^2);
-%      ddotTheta;
-%      x2 
-%      ];
+
 
 %% Create System of ODE's
 % State variables: x1 x2 x3 x4 x5 x6
-%       x1 -> x position
-%       x2 -> y position
-%       x3 -> body angle
-%       x4 -> x velocity
-%       x5 -> y velocity
-%       x6 -> body angular velocity
-syms x1 x2 x3 x4 x5 x6
+%       x1 -> body angle
+%       x2 -> x velocity
+%       x3 -> y velocity
+%       x4 -> body angular velocity
+syms x1 x2 x3 x4
 
 % Control variables: u1 u2 Ft psi
 %       u1 -> F1 + F2
@@ -53,39 +30,16 @@ syms x1 x2 x3 x4 x5 x6
 syms u1 u2 Ft psi
 
 % State Space
-F = [x4;
-     x5;
-     x6;
-     (u1/m)*cos(x3) + (Ft/m)*cos(x3 + psi);
-     (u1/m)*sin(x3) + (Ft/m)*sin(x3 + psi) - Fw/m;
+F = [ x4;
+     (u1/m)*cos(x1) + (Ft/m)*cos(x1 + psi);
+     (u1/m)*sin(x1) + (Ft/m)*sin(x1 + psi) - Fw/m;
      (width/(2*I))*u2 - (Ft/I)*(L/2 - bL)*sin(psi) 
      ];
 
-% %% Create State Space Model
-% % Creating list of state and control variables
-% stateVars = [x1 x2 x3];
-% controlVars = [u1 u2 Ft psi];
-% 
-% % Take partial derivatives of F with respect to states
-% Ax = jacobian(F, stateVars);
-% 
-% % Take partial derivatives of F with respect to control inputs
-% Bx = jacobian(F, controlVars);
-% 
-% % Linearize about the trim state 'p'
-% p = [0 0 pi/2 0 0 0 0]; % [0 0 0 0 0 mg 0]
-% v = [x1 x2 x3 u1 u2 Ft psi];
-% A = double(subs(Ax,v,p));
-% B = double(subs(Bx,v,p));
-% C = [1 0 0;
-%      0 1 0;
-%      0 0 1];
-% D = [0 0 0 0;
-%      0 0 0 0;
-%      0 0 0 0];
+
 %% Create State Space Model
 % Creating list of state and control variables
-stateVars = [x1 x2 x3 x4 x5 x6];
+stateVars = [x1 x2 x3 x4];
 controlVars = [u1 u2 Ft psi];
 
 % Take partial derivatives of F with respect to states
@@ -95,55 +49,33 @@ A = jacobian(F, stateVars);
 B = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
-p = [0 0 pi/2 0 0 0 0 0 m*g 0];
-v = [x1 x2 x3 x4 x5 x6 u1 u2 Ft psi];
+p = [pi/2 0 0 0 0 0 m*g 0];
+v = [x1 x2 x3 x4 u1 u2 Ft psi];
 A = double(subs(A,v,p));
 B = double(subs(B,v,p));
-C = [1 0 0 0 0 0;
-     0 1 0 0 0 0;
-     0 0 1 0 0 0;
-     0 0 0 1 0 0;
-     0 0 0 0 1 0;
-     0 0 0 0 0 1];
+C = [1 0 0 0;
+     0 1 0 0;
+     0 0 1 0;
+     0 0 0 1];
 D = [0 0 0 0;
-     0 0 0 0;
-     0 0 0 0;
      0 0 0 0;
      0 0 0 0;
      0 0 0 0];
 
-% %% LQR Controller Design
-% % Determine controllability
-% rank(ctrb(A,B)) % This should equal the number of states - 3
-% 
-% % LQR Control
-% Q = [1e5 0 0;               % vel 1e3, 1e14
-%      0 1e14 0;               % angular vel 1e15
-%      0 0 0];                % angle pos. = 0 because it doesn't matters
-% R = [1 0 0 0;               % u1 = f1+f2
-%      0 1 0 0;               % u2 = f1-f2
-%      0 0 1e3 0;               % Ft
-%      0 0 0 1e9];            % Psi 
-% K = lqr(A, B, Q, R);
 %% LQR Controller Design
 % Determine controllability
 rank(ctrb(A,B)) % This should equal the number of states - 6
 
 % LQR Control
-Q = [1e-6 0 0 0 0 0;         % X pos
-     0 1e-6 0 0 0 0;         % Y pos
-     0 0 1e-6 0  0 0;        % Theta
-     0 0 0 1e8 0  0;        % Vx
-     0 0 0 0 1e8 0;         % Vy
-     0 0 0 0 0 1e12];        % d(Theta)/dt
-R = [1 0 0 0;               % u1 = f1+f2
-     0 1 0 0;               % u2 = f1-f2
-     0 0 1e4 0;               % Ft
-     0 0 0 1e9];            % Psi 
+Q = [0 0 0 0;       % Theta
+     0 1e8 0 0;        % Vx
+     0 0 1e8 0;         % Vy
+     0 0 0 1e15];       % d(Theta)/dt
+R = [1e-2 0 0 0;               % u1 = f1+f2
+     0 1e-2 0 0;               % u2 = f1-f2
+     0 0 1e-3 0;               % Ft
+     0 0 0 1e7];            % Psi 
 K = lqr(A, B, Q, R);
-%%%%%% STILL NEED TO TWEAK LQR BECAUSE WE CARE ABOUT VELOCITIES NOW NOT
-%%%%%% POSITION... MAYBE MAKE POSITIONS IN Q MATRIX ZERO
-% K = K(1:4, 4:6);
 
 %% Control Block Design
 % Target parking pose:
@@ -165,10 +97,8 @@ y_dot = 0;
 phi_dot = 0;
 
 % Initial conditions array form
-% Ustar = [0 0 0 0]'; % control at the point of linearization 
-% ystar = [0, 0, 0]'; % uRef, wRef, 0
 Ustar = [0 0 m*g 0]';
-ystar = [0, 0, 0, 0, 0, 0]'; % will be filled with x_dot, y_dot, theta_dot refs
+ystar = [0, 0, 0, 0]'; % will be filled with x_dot, y_dot, theta_dot refs
 y1Init =  [x, y, phi, 0, 0, 0]'; %initial state  
 
 % Timestep
@@ -204,10 +134,6 @@ for i=1:25
     end
     
     %%%%% Solve for reference velocities %%%%%
-%     x_dot_ref = roots([1, tan(wRef), -uRef^2]); % xdot
-%     x_dot_ref = x_dot_ref(1); %%% WHICH ROOT TO CHOOSE?
-%     y_dot_ref = sqrt(uRef^2 - x_dot_ref^2); %%%%%%%%%%%%%%%%%%%%%%%%%% THIS IS WHERE THE IMAGINARY # IS COMING FROM,, AND THIS CAN NEVER BE NEGATIVE?
-%     phi_dot_ref = wRef;
     x_dot_ref = sqrt(uRef^2 / (1 + tan(wRef)^2))
     y_dot_ref = x_dot_ref * tan(wRef)
     phi_dot_ref = wRef
@@ -215,21 +141,13 @@ for i=1:25
     
     % Loop the actuator commands to get to uRef,wRef
 %     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
-%     while(x_dot ~= x_dot_ref && y_dot ~= y_dot_ref && phi_dot ~= phi_dot_ref)
-    for j=1:50
-%         disp(x_dot);
+    while(x_dot ~= x_dot_ref && y_dot ~= y_dot_ref && phi_dot ~= phi_dot_ref)
+%     for j=1:50
+        disp(phi_dot);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
-%         ystar = [uRef, wRef, 0]';
-%         y0 = [u, w, 0]';
-        ystar = [0, 0, 0, x_dot_ref, y_dot_ref, phi_dot_ref]';
-        y0 = [x, y, phi, x_dot, y_dot, phi_dot]';
+        ystar = [0, x_dot_ref, y_dot_ref, phi_dot_ref]';
+        y0 = [phi, x_dot, y_dot, phi_dot]';
         
-        %%%%%% 
-        
-%         ystar = [x_dot_ref, y_dot_ref, phi_dot_ref]';
-%         y0 = [x_dot, y_dot, phi_dot]';
-        
-        %%%%%%
         
         % uK defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
         uK = -K*(y0-ystar);
@@ -263,8 +181,6 @@ for i=1:25
         x_dot = y1(end,4);
         y_dot = y1(end,5);
         phi_dot = y1(end,6);
-%         u = sqrt(x_dot^2 + y_dot^2);
-%         w = phi_dot;
 
         % Record results
         yrec1=[yrec1,y1'];
