@@ -116,12 +116,15 @@ wrec = [];
 % wReferrorTolerance = 0.1*pi/180;
 
 % Control Loop
-for i=1:1
+for i=1:2
     %%%% Compute e, alpha, and theta %%%%
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-thetaP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
     alpha=theta-(phi-thetaP);
     alpha=atan2(sin(alpha),cos(alpha));
+    x
+    y
+    phi
     
     %%%%% Update Controls %%%%
     uRef = gamma*e*cos(alpha)
@@ -141,7 +144,7 @@ for i=1:1
     % Loop the actuator commands to get to uRef,wRef
 %     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
 %     while(x_dot ~= x_dot_ref && y_dot ~= y_dot_ref && phi_dot ~= phi_dot_ref)
-    for j=1:1000
+    for j=1:2000
         disp(y_dot);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [0, x_dot_ref, y_dot_ref, phi_dot_ref]';
