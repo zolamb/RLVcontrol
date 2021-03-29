@@ -3,10 +3,10 @@ clear;
 clc;
 
 % Target parking pose:
-xP=-200; yP=1; thetaP=pi/2; % we will use it in formulas for e and alpha
+xP=0; yP=100; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
-x=-1; y=1; phi=3*pi/4;
+x=0; y=0; phi=pi/2;
 
 % Control vars
 u = 0;      % Speed
@@ -24,6 +24,8 @@ yrec = [];
 urec = [];
 wrec = [];
 trec=[];
+
+disp("here")
 for i=1:500
     % Compute e, alpha, and theta
     % phi - robot heading, theta - heading of the parking pose
@@ -36,13 +38,13 @@ for i=1:500
     alpha=atan2(sin(alpha),cos(alpha));
 
     % Update controls
-    u = gamma*e*cos(alpha);
+    u = gamma*e*cos(alpha)
     if alpha <= 1e-50
       % lim alpha->0 (cos(alpha)*sin(alpha)/alpha) = 1
       w = k*alpha + gamma*cos(alpha)*sin(alpha)+...
-          gamma*h*theta;      
+          gamma*h*theta      
     else
-      w = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
+      w = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha
     end
     
     % Update initial conditions

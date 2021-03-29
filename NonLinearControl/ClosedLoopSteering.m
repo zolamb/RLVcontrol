@@ -67,22 +67,22 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 6
 
 % LQR Control
-Q = [0 0 0 0;       % Theta
-     0 1e8 0 0;        % Vx
+Q = [0 0 0 0;           % Theta
+     0 1e11 0 0;         % Vx
      0 0 1e8 0;         % Vy
      0 0 0 1e15];       % d(Theta)/dt
-R = [1e-2 0 0 0;               % u1 = f1+f2
-     0 1e-2 0 0;               % u2 = f1-f2
-     0 0 1e-3 0;               % Ft
+R = [1e-1 0 0 0;               % u1 = f1+f2
+     0 1e-1 0 0;               % u2 = f1-f2
+     0 0 1e-2 0;               % Ft
      0 0 0 1e7];            % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=-200; yP=1; thetaP=pi/2; % we will use it in formulas for e and alpha
+xP=0; yP=100; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
-x=-1; y=1; phi=3*pi/4;
+x=0; y=0; phi=pi/2;
 
 % Gains
 gamma = 3;
@@ -116,7 +116,7 @@ wrec = [];
 % wReferrorTolerance = 0.1*pi/180;
 
 % Control Loop
-for i=1:25
+for i=1:1
     %%%% Compute e, alpha, and theta %%%%
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-thetaP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
@@ -124,26 +124,25 @@ for i=1:25
     alpha=atan2(sin(alpha),cos(alpha));
     
     %%%%% Update Controls %%%%
-    uRef = gamma*e*cos(alpha);
+    uRef = gamma*e*cos(alpha)
     if alpha <= 1e-50
       % lim alpha->0 (cos(alpha)*sin(alpha)/alpha) = 1
       wRef = k*alpha + gamma*cos(alpha)*sin(alpha)+...
-          gamma*h*theta;
+          gamma*h*theta
     else
-      wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
+      wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha
     end
     
     %%%%% Solve for reference velocities %%%%%
-    x_dot_ref = sqrt(uRef^2 / (1 + tan(wRef)^2))
-    y_dot_ref = x_dot_ref * tan(wRef)
+    y_dot_ref = sqrt(uRef^2 / (1 + tan(wRef)^2)) %%%%%%%%%%%%%%%%
+    x_dot_ref = y_dot_ref * tan(wRef) %%%%%%%%%%%%%%%%%%%%%%%%%
     phi_dot_ref = wRef
-    
-    
+
     % Loop the actuator commands to get to uRef,wRef
 %     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
-    while(x_dot ~= x_dot_ref && y_dot ~= y_dot_ref && phi_dot ~= phi_dot_ref)
-%     for j=1:50
-        disp(phi_dot);
+%     while(x_dot ~= x_dot_ref && y_dot ~= y_dot_ref && phi_dot ~= phi_dot_ref)
+    for j=1:1000
+        disp(y_dot);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [0, x_dot_ref, y_dot_ref, phi_dot_ref]';
         y0 = [phi, x_dot, y_dot, phi_dot]';
@@ -196,7 +195,6 @@ for i=1:25
         % Create new initial conditions array
         y1Init = y1(end,:)'; % May need y1(end,3)-90deg. %%%%%%%%%%%%%%% Probably not here tho
     end
-   disp("here")
 end
 
 % Plot cartesian results
