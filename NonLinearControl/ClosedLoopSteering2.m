@@ -76,7 +76,7 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=0; yP=5000; thetaP=pi/2; % we will use it in formulas for e and alpha
+xP=50; yP=5000; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=0; y=0; phi=pi/2;
@@ -93,7 +93,7 @@ w = 0;
 % Initial conditions array form
 Ustar = [0 0 m*g 0]';
 ystar = [0, 0, 0, 0]'; % will be filled with mag, phi, u, w
-y1Init =  [0, pi/2, 0, 0]'; %initial state  
+y1Init =  [0, pi/2, 0, 0, 0, 0, 0 ,0]'; %initial state  
 
 % Timestep
 dt = 0.01;
@@ -110,7 +110,7 @@ uReferrorTolerance = 0.1;
 wReferrorTolerance = 0.01;
 
 % Control Loop
-for i=1:500
+for i=1:1000
     disp("here")
     %%%% Compute e, alpha, and theta %%%%
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
@@ -132,7 +132,7 @@ for i=1:500
     end
 
 %     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
-%     for j=1:20
+%     for j=1:5000
         disp(w);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [uRef, wRef, 0]';
@@ -170,8 +170,10 @@ for i=1:500
         u=y1(end,3);
         w=y1(end,4);
         
-        x = mag*cos(phi);
-        y = mag*sin(phi);
+%         x = mag*cos(phi);
+%         y = mag*sin(phi);
+        x = y1(end,5);
+        y = y1(end,6);
 
         % Record results
         yrec1=[yrec1,[x y]'];
@@ -193,6 +195,9 @@ end
 figure(1)
 plot(yrec1(1,:), yrec1(2,:))
 axis equal
+
+figure(2)
+plot(trec1(1,:), actuatorsRec(1,:))
 % figure(2)
 % plot(trec,yrec2(3,:)*180/pi)
 % figure(3)

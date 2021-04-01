@@ -15,4 +15,8 @@ function dx = odeFunction4(x, w, L, bL, m, Fw, I, u) % first parameter must be t
     dx(2,1) = x(4);
     dx(3,1) = sqrt(ddotX^2 + ddotY^2);
     dx(4,1) = ddotTheta;
+    dx(5,1) = x(7);
+    dx(6,1) = x(8);
+    dx(7,1) = ddotX;
+    dx(8,1) = ddotY;
 end
