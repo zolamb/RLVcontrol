@@ -18,9 +18,9 @@ trec = [];
 dt = 0.01;
 
 U = [0, 0, 2*m*g, 0];
-y2Init = [0, pi/2, 0, 0];
+y2Init = [0, pi/2, 0, 0, 0, 0, 0, 0];
 
-for i=1:1000
+for i=1:5000
     if(i==500)
         U = [0, 1000, 2*m*g, 0];
     end
@@ -30,6 +30,6 @@ for i=1:1000
 end
 
 figure(1)
-polarplot(yrec(2,:),yrec(1,:))
+plot(yrec(5,:),yrec(6,:))
 
 
