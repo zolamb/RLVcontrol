@@ -65,18 +65,18 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 3
 
 % LQR Control
-Q = [1e10 0 0;               % vel
-     0 1e11 0;               % angular vel
-     0 0 0];                % angle pos. = 0 because it doesn't matter
+Q = [1e11 0 0;              % vel e10, e11
+     0 1e9 0;              % angular vel
+     0 0 0];                % heading angle = 0 because it doesn't matter
 R = [1 0 0 0;               % u1 = f1+f2
-     0 1 0 0;               % u2 = f1-f2
-     0 0 1e-2 0;               % Ft
+     0 1e4 0 0;               % u2 = f1-f2
+     0 0 1e4 0;            % Ft
      0 0 0 1e9];            % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=50; yP=5000; thetaP=pi/2; % we will use it in formulas for e and alpha
+xP=500; yP=5000; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=0; y=0; phi=pi/2;
@@ -91,9 +91,9 @@ u = 0;
 w = 0;
 
 % Initial conditions array form
-Ustar = [0 0 m*g 0]';
+Ustar = [0 0 0 0]';
 ystar = [0, 0, 0, 0]'; % will be filled with mag, phi, u, w
-y1Init =  [0, pi/2, 0, 0, 0, 0, 0 ,0]'; %initial state  
+y1Init =  [0, 0, 0, 0, phi, x, y]'; %initial state  
 
 % Timestep
 dt = 0.01;
@@ -106,22 +106,18 @@ urec = [];
 wrec = [];
 
 % uRef,wRef error tolerance ~ 0.1m/s,0.1deg/s
-uReferrorTolerance = 0.1;
-wReferrorTolerance = 0.01;
+uReferrorTolerance = 5;
+wReferrorTolerance = 0.1;
 
 % Control Loop
-for i=1:1000
-    disp("here")
+for i=1:1 % ------ LEAVING THIS AT 1 TO JUST TEST IF MY u AND w TRACK TO REFERENCES ---------------------
     %%%% Compute e, alpha, and theta %%%%
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-thetaP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
     alpha=theta-(phi-thetaP);
     alpha=atan2(sin(alpha),cos(alpha));
-    x
-    y
-    phi
     
-    %%%%% Update Controls %%%%
+    %%%% Update Controls %%%%
     uRef = gamma*e*cos(alpha)
     if alpha <= 1e-50
       % lim alpha->0 (cos(alpha)*sin(alpha)/alpha) = 1
@@ -130,10 +126,11 @@ for i=1:1000
     else
       wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha
     end
-
+    
+    %%%% INNER LOOP %%%%
 %     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
-%     for j=1:5000
-        disp(w);
+    for j=1:10000 % ------ USING THIS LOOP TO JUST TEST IF MY u AND w TRACK TO REFERENCES ---------------------
+        disp(u);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [uRef, wRef, 0]';
         y0 = [u, w, 0]';
@@ -143,6 +140,7 @@ for i=1:1000
         uK = -K*(y0-ystar);
         % Converting to F1,F2 form
         uK = [(uK(1)+uK(2))/2 (uK(1)-uK(2))/2 uK(3) uK(4)]';
+        uK=uK*-1;
         U=Ustar+uK; % U rocket control (linear control)
 
         % Apply saturations
@@ -165,15 +163,11 @@ for i=1:1000
         [t, y1] = ode45(@(t,y1)odeFunction4(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init);
 
         % Store last x,y,phi position and solve for current u,w
-        mag=y1(end,1);
-        phi=y1(end,2);
-        u=y1(end,3);
-        w=y1(end,4);
-        
-%         x = mag*cos(phi);
-%         y = mag*sin(phi);
-        x = y1(end,5);
-        y = y1(end,6);
+        u=y1(end,1);
+        w=y1(end,2);
+        phi=y1(end,5);
+        x = y1(end,6);
+        y = y1(end,7);
 
         % Record results
         yrec1=[yrec1,[x y]'];
@@ -183,24 +177,17 @@ for i=1:1000
              ones(1,length(t))*U(3,1);
              ones(1,length(t))*U(4,1)];
         actuatorsRec=[actuatorsRec tmp];
-%         urec=[urec u*ones(1,length(y1))];
-%         wrec=[wrec w*ones(1,length(y1))];
         
         % Create new initial conditions array
-        y1Init = y1(end,:)'; % May need y1(end,3)-90deg. %%%%%%%%%%%%%%% Probably not here tho
-%     end
+        y1Init = y1(end,:)';
+    end
 end
 
-% Plot cartesian results
+% Plot x,y results
 figure(1)
 plot(yrec1(1,:), yrec1(2,:))
 axis equal
 
+% Plot thrust force
 figure(2)
-plot(trec1(1,:), actuatorsRec(1,:))
-% figure(2)
-% plot(trec,yrec2(3,:)*180/pi)
-% figure(3)
-% plot(trec,urec)
-% figure(4)
-% plot(trec,wrec)
+plot(trec1(1,:), actuatorsRec(3,:))
