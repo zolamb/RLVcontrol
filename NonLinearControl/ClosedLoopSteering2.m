@@ -65,18 +65,18 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 3
 
 % LQR Control
-Q = [1e11 0 0;              % vel e10, e11
+Q = [1e12 0 0;              % vel e10, e11
      0 1e9 0;              % angular vel
      0 0 0];                % heading angle = 0 because it doesn't matter
 R = [1 0 0 0;               % u1 = f1+f2
-     0 1e4 0 0;               % u2 = f1-f2
-     0 0 1e4 0;            % Ft
-     0 0 0 1e9];            % Psi 
+     0 1 0 0;               % u2 = f1-f2
+     0 0 1 0;            % Ft
+     0 0 0 1e6];            % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=500; yP=5000; thetaP=pi/2; % we will use it in formulas for e and alpha
+xP=-500; yP=5000; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=0; y=0; phi=pi/2;
@@ -92,8 +92,8 @@ w = 0;
 
 % Initial conditions array form
 Ustar = [0 0 0 0]';
-ystar = [0, 0, 0, 0]'; % will be filled with mag, phi, u, w
-y1Init =  [0, 0, 0, 0, phi, x, y]'; %initial state  
+ystar = [0, 0, 0]'; % will be filled with mag, phi, u, w
+y1Init =  [0.1, 0, 0.1, 0, phi, x, y]'; %initial state  
 
 % Timestep
 dt = 0.01;
@@ -129,7 +129,7 @@ for i=1:1 % ------ LEAVING THIS AT 1 TO JUST TEST IF MY u AND w TRACK TO REFEREN
     
     %%%% INNER LOOP %%%%
 %     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
-    for j=1:10000 % ------ USING THIS LOOP TO JUST TEST IF MY u AND w TRACK TO REFERENCES ---------------------
+    for j=1:20000 % ------ USING THIS LOOP TO JUST TEST IF MY u AND w TRACK TO REFERENCES ---------------------
         disp(u);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [uRef, wRef, 0]';
@@ -161,23 +161,23 @@ for i=1:1 % ------ LEAVING THIS AT 1 TO JUST TEST IF MY u AND w TRACK TO REFEREN
 
         % Solve ODE for new position
         [t, y1] = ode45(@(t,y1)odeFunction4(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init);
-
+        
         % Store last x,y,phi position and solve for current u,w
         u=y1(end,1);
         w=y1(end,2);
         phi=y1(end,5);
         x = y1(end,6);
-        y = y1(end,7);
+        y = y1(end,7);g
 
         % Record results
-        yrec1=[yrec1,[x y]'];
+        yrec1=[yrec1,[x y phi u w]'];
         trec1=[trec1, (i-1)*dt+t'];
         tmp=[ones(1,length(t))*U(1,1);
              ones(1,length(t))*U(2,1);
              ones(1,length(t))*U(3,1);
              ones(1,length(t))*U(4,1)];
         actuatorsRec=[actuatorsRec tmp];
-        
+
         % Create new initial conditions array
         y1Init = y1(end,:)';
     end

@@ -11,7 +11,8 @@ function dx = odeFunction4(x, w, L, bL, m, Fw, I, u) % first parameter must be t
     ddotTheta = (w/(2*I))*(F1-F2) - (Ft/I)*(L/2 - bL)*sin(Psi);
 
     % Solve ODEs
-    dx(1,1) = sqrt(ddotX^2 + ddotY^2);
+%     dx(1,1) = sqrt(ddotX^2 + ddotY^2);
+    dx(1,1) = (ddotX*x(3) + ddotY*x(4)) / sqrt(x(3)^2 + x(4)^2);
     dx(2,1) = ddotTheta;
     dx(3,1) = ddotX;
     dx(4,1) = ddotY;
