@@ -65,18 +65,18 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 3
 
 % LQR Control
-Q = [1e12 0 0;              % vel e10, e11
-     0 1e9 0;              % angular vel
+Q = [1e10 0 0;              % vel e10, e11
+     0 1 0;              % angular vel
      0 0 0];                % heading angle = 0 because it doesn't matter
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;            % Ft
-     0 0 0 1e6];            % Psi 
+     0 0 0 1];            % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=-500; yP=5000; thetaP=pi/2; % we will use it in formulas for e and alpha
+xP=-500; yP=1500; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=0; y=0; phi=pi/2;
@@ -167,7 +167,7 @@ for i=1:1 % ------ LEAVING THIS AT 1 TO JUST TEST IF MY u AND w TRACK TO REFEREN
         w=y1(end,2);
         phi=y1(end,5);
         x = y1(end,6);
-        y = y1(end,7);g
+        y = y1(end,7);
 
         % Record results
         yrec1=[yrec1,[x y phi u w]'];
