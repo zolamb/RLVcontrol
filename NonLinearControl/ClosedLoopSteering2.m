@@ -15,11 +15,15 @@ I = 0.5*m*(width/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 
 
 %% Create System of ODE's for u,w,theta
-% State variables: x1 x2 x3
-%       x1 -> vel
+% State variables: x1 x2 x3 x4 x5 x6 x7
+%       x1 -> magnitude of vel
 %       x2 -> angular vel
-%       x3 -> body angle
-syms x1 x2 x3
+%       x3 -> x vel
+%       x4 -> y vel
+%       x5 -> theta
+%       x6 -> x
+%       x7 -> y
+syms x1 x2 x3 x4 x5 x6 x7
 
 % Control variables: u1 u2 Ft psi
 %       u1 -> F1 + F2
@@ -29,17 +33,23 @@ syms x1 x2 x3
 syms u1 u2 Ft psi
 
 % State Space
-ddotX = (u1)/m*cos(x3) + (Ft/m)*cos(x3 + psi);
-ddotY = (u1)/m*sin(x3) + (Ft/m)*sin(x3 + psi) - Fw/m;
+ddotX = (u1)/m*cos(x5) + (Ft/m)*cos(x5 + psi);
+ddotY = (u1)/m*sin(x5) + (Ft/m)*sin(x5 + psi) - Fw/m;
 ddotTheta = (width/(2*I))*(u2) - (Ft/I)*(L/2 - bL)*sin(psi);
-F = [sqrt(ddotX^2 + ddotY^2);
+F = [(ddotX*x3 + ddotY*x4) / sqrt(x3^2 + x4^2)
      ddotTheta;
-     x2 
-     ];
+     ddotX;
+     ddotY;
+     x2
+     x3
+     x4];
 
 %% Create State Space Model
+%Initial condition:
+u=0.1; w=0; xdot=0; ydot=0.1; phi=pi/2; x=0; y=0;
+
 % Creating list of state and control variables
-stateVars = [x1 x2 x3];
+stateVars = [x1 x2 x3 x4 x5 x6 x7];
 controlVars = [u1 u2 Ft psi];
 
 % Take partial derivatives of F with respect to states
@@ -49,13 +59,17 @@ Ax = jacobian(F, stateVars);
 Bx = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
-p = [0 0 pi/2 0 0 0 0];
-v = [x1 x2 x3 u1 u2 Ft psi];
+p = [0.1 0 0 0.1 pi/2 0 0 0 0 m*g 0];
+v = [x1 x2 x3 x4 x5 x6 x7 u1 u2 Ft psi];
 A = double(subs(Ax,v,p));
 B = double(subs(Bx,v,p));
-C = [1 0 0;
-     0 1 0;
-     0 0 1];
+C = [1 0 0 0 0 0 0;
+     0 1 0 0 0 0 0;
+     0 0 1 0 0 0 0;
+     0 0 0 1 0 0 0;
+     0 0 0 0 1 0 0;
+     0 0 0 0 0 1 0;
+     0 0 0 0 0 0 1];
 D = [0 0 0 0;
      0 0 0 0;
      0 0 0 0];
@@ -65,9 +79,13 @@ D = [0 0 0 0;
 rank(ctrb(A,B)) % This should equal the number of states - 3
 
 % LQR Control
-Q = [1e10 0 0;              % vel e10, e11
-     0 1 0;              % angular vel
-     0 0 0];                % heading angle = 0 because it doesn't matter
+Q = [1 0 0 0 0 0 0;              % vel e10, e11
+     0 1 0 0 0 0 0;              % angular vel
+     0 0 1 0 0 0 0;
+     0 0 0 1 0 0 0;
+     0 0 0 0 1 0 0;
+     0 0 0 0 0 1 0;
+     0 0 0 0 0 0 1];                % heading angle = 0 because it doesn't matter
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;            % Ft
@@ -78,22 +96,15 @@ K = lqr(A, B, Q, R);
 % Target parking pose:
 xP=-500; yP=1500; thetaP=pi/2; % we will use it in formulas for e and alpha
 
-%Initial condition:
-x=0; y=0; phi=pi/2;
-
 % Gains
 gamma = 3;
 h = 1;
 k = 6;
 
-% Initial Conditions
-u = 0;
-w = 0;
-
 % Initial conditions array form
 Ustar = [0 0 0 0]';
-ystar = [0, 0, 0]'; % will be filled with mag, phi, u, w
-y1Init =  [0.1, 0, 0.1, 0, phi, x, y]'; %initial state  
+ystar = [0, 0, 0]';
+y1Init =  [u, w, xdot, ydot, phi, x, y]'; %initial state  
 
 % Timestep
 dt = 0.01;
@@ -130,7 +141,7 @@ for i=1:1 % ------ LEAVING THIS AT 1 TO JUST TEST IF MY u AND w TRACK TO REFEREN
     %%%% INNER LOOP %%%%
 %     while(abs(uRef - u) > uReferrorTolerance || abs(wRef - w) > wReferrorTolerance)
     for j=1:20000 % ------ USING THIS LOOP TO JUST TEST IF MY u AND w TRACK TO REFERENCES ---------------------
-        disp(u);
+        disp(w);
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [uRef, wRef, 0]';
         y0 = [u, w, 0]';

@@ -98,9 +98,9 @@ initial(sys, y0)
 
 %% Discrete Time Control
 Ustar = [0 0 m*g 0]'; % control at the point of linearization  
-ystar = [500, 1000, 0, 0, 0, 0]'; %state space point of linearization
+ystar = [500, 900, 0, 0, 0, 0]'; %state space point of linearization
 % ystar = [720, 820, 0, 0, 0, 0]'; %state space point of linearization
-y0 =  [520, 800, 0, 0, 0, 0]'; %initial state  
+y0 =  [600, 1100, 0, 0, 0, 0]'; %initial state  
 dt=0.01;
 xRec=[];
 tRec=[];
@@ -111,6 +111,20 @@ for i=1:6000
      ur = [(u(1)+u(2))/2 (u(1)-u(2))/2 u(3) u(4)]'; % Converting to F1,F2 form
      U=Ustar+ur; % U rocket control (large signals)
      % control saturations (Physical Limitations ?)
+     if U(1,1)>m*g
+         U(1,1)=m*g;
+     elseif U(1,1)<=0
+        U(1,1)=0; 
+     else
+        U(1,1)=U(1,1);
+     end
+     if U(2,1)>m*g
+         U(2,1)=m*g;
+     elseif U(2,1)<=0
+        U(2,1)=0; 
+     else
+        U(2,1)=U(2,1);
+     end
      if U(3,1)>3*m*g
          U(3,1)=3*m*g;
      elseif U(3,1)<=0
@@ -180,4 +194,5 @@ plot(xRec(1,:),xRec(2,:))
 title('Position')
 ylabel('y (m)')
 xlabel('x (m)')
+
 
