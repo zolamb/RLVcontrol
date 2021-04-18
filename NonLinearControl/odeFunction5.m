@@ -1,4 +1,4 @@
-function dx = odeFunction5(x, w, L, bL, m, Fw, I, u) % first parameter must be to be t
+function dx = odeFunction5(x, width, L, bL, m, Fw, I, u) % first parameter must be to be t
     % Control inputs
     F1=u(1);
     F2=u(2);
@@ -15,7 +15,7 @@ function dx = odeFunction5(x, w, L, bL, m, Fw, I, u) % first parameter must be t
     
     ddotX = (F1+F2)/m*cos(theta) + (Ft/m)*cos(theta + Psi);
     ddotY = (F1+F2)/m*sin(theta) + (Ft/m)*sin(theta + Psi) - Fw/m;
-    ddotTheta = (w/(2*I))*(F1-F2) - (Ft/I)*(L/2 - bL)*sin(Psi);
+    ddotTheta = (width/(2*I))*(F1-F2) - (Ft/I)*(L/2 - bL)*sin(Psi);
     
     dx(1,1) = vx;
     dx(2,1) = vy;
