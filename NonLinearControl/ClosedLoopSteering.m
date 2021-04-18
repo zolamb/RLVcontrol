@@ -12,18 +12,13 @@ g = 9.81;               % acceleration due to gravity (m/s^2)
 Fw = m*g;               % weight of rocket (N)
 I = 0.5*m*(width/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 
-
-
 %% Create System of ODE's for u,w,theta
 % State variables: x1 x2 x3 x4 x5 x6 x7
-%       x1 -> magnitude of vel
-%       x2 -> angular vel
-%       x3 -> x vel
-%       x4 -> y vel
-%       x5 -> theta
-%       x6 -> x
-%       x7 -> y
-syms x1 x2 x3 x4 x5 x6 x7
+%       x1 -> vel mag (v)
+%       x2 -> sideslip (beta)
+%       x3 -> heading angle (theta)
+%       x4 -> turning rate (dotTheta)
+syms x1 x2 x3 x4
 
 % Control variables: u1 u2 Ft psi
 %       u1 -> F1 + F2
@@ -33,23 +28,17 @@ syms x1 x2 x3 x4 x5 x6 x7
 syms u1 u2 Ft psi
 
 % State Space
-ddotX = (u1)/m*cos(x5) + (Ft/m)*cos(x5 + psi);
-ddotY = (u1)/m*sin(x5) + (Ft/m)*sin(x5 + psi) - Fw/m;
-ddotTheta = (width/(2*I))*(u2) - (Ft/I)*(L/2 - bL)*sin(psi);
-F = [(ddotX*x3 + ddotY*x4) / sqrt(x3^2 + x4^2)
-     ddotTheta;
-     ddotX;
-     ddotY;
-     x2
-     x3
-     x4];
+F = [(u1/m)*cos(x2) + (Ft/m)*cos(x2 - psi) - (Fw/m)*sin(x2 + x3);
+     (u1/(x1*m))*cos(2*x3 + x2) + (Ft/(x1*m))*cos(2*x3 + x2 + psi) + (Fw/(x1*m)) - x4;
+     x4;
+     (width/(2*I))*u2 - (Ft/I)*(L/2 - bL)*sin(psi)];
 
 %% Create State Space Model
 %Initial condition:
 u=0.1; w=0; xdot=0; ydot=0.1; phi=pi/2; x=0; y=0;
 
 % Creating list of state and control variables
-stateVars = [x1 x2 x3 x4 x5 x6 x7];
+stateVars = [x1 x2 x3 x4];
 controlVars = [u1 u2 Ft psi];
 
 % Take partial derivatives of F with respect to states
@@ -59,33 +48,27 @@ Ax = jacobian(F, stateVars);
 Bx = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
-p = [0.1 0 0 0.1 pi/2 0 0 0 0 m*g 0];
-v = [x1 x2 x3 x4 x5 x6 x7 u1 u2 Ft psi];
+p = [1 0 pi/2 0 0 0 m*g 0];
+v = [x1 x2 x3 x4 u1 u2 Ft psi];
 A = double(subs(Ax,v,p));
 B = double(subs(Bx,v,p));
-C = [1 0 0 0 0 0 0;
-     0 1 0 0 0 0 0;
-     0 0 1 0 0 0 0;
-     0 0 0 1 0 0 0;
-     0 0 0 0 1 0 0;
-     0 0 0 0 0 1 0;
-     0 0 0 0 0 0 1];
+C = [1 0 0 0;
+     0 1 0 0;
+     0 0 1 0;
+     0 0 0 1];
 D = [0 0 0 0;
      0 0 0 0;
      0 0 0 0];
 
-%% LQR Controller Design
 % Determine controllability
-rank(ctrb(A,B)) % This should equal the number of states - 3
+rank(ctrb(A,B)) % This should equal the number of states
 
+%% LQR Controller Design
 % LQR Control
-Q = [1 0 0 0 0 0 0;              % vel e10, e11
-     0 1 0 0 0 0 0;              % angular vel
-     0 0 1 0 0 0 0;
-     0 0 0 1 0 0 0;
-     0 0 0 0 1 0 0;
-     0 0 0 0 0 1 0;
-     0 0 0 0 0 0 1];                % heading angle = 0 because it doesn't matter
+Q = [1 0 0 0;              % vel e10, e11
+     0 1 0 0;              % angular vel
+     0 0 1 0;
+     0 0 0 1];                % heading angle = 0 because it doesn't matter
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;            % Ft
@@ -94,7 +77,7 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=-500; yP=1500; thetaP=pi/2; % we will use it in formulas for e and alpha
+xP=0; yP=1500; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 % Gains
 gamma = 3;
@@ -103,7 +86,7 @@ k = 6;
 
 % Initial conditions array form
 Ustar = [0 0 0 0]';
-ystar = [0, 0, 0]';
+ystar = [0, 0, 0, 0]';
 y1Init =  [u, w, xdot, ydot, phi, x, y]'; %initial state  
 
 % Timestep
