@@ -71,7 +71,7 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=0; yP=1000; phiP=pi/2; % we will use it in formulas for e and alpha
+xP=0; yP=3000; phiP=pi/2; % we will use it in formulas for e and alpha
 
 % Gains
 gamma = 3;
@@ -96,7 +96,7 @@ wRefrec = [];
 
 % Control Loop
 e=sqrt((xP-x)^2+(yP-y)^2);
-for i=1:1000
+for i=1:700
 % while(e>100)
     % Compute e, alpha, and theta
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
@@ -129,18 +129,18 @@ for i=1:1000
         U=Ustar+uK;
 
         % Apply saturations
-        if U(1,1)>0.5*m*g
-            U(1,1)=0.5*m*g;
-        elseif U(1,1)<=0
-           U(1,1)=0; 
+        if U(1,1)>5*m*g
+            U(1,1)=5*m*g;
+        elseif U(1,1)<-5*m*g
+           U(1,1)=-5*m*g; 
         else
            U(1,1)=U(1,1);
         end
 
-        if U(2,1)>0.5*m*g
-            U(2,1)=0.5*m*g;
-        elseif U(2,1)<=0
-           U(2,1)=0; 
+        if U(2,1)>5*m*g
+            U(2,1)=5*m*g;
+        elseif U(2,1)<-5*m*g
+           U(2,1)=-5*m*g; 
         else
            U(2,1)=U(2,1);
         end
