@@ -18,9 +18,7 @@ I = 0.5*m*(width/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 %       x2 -> sideslip (beta)
 %       x3 -> heading angle (phi)
 %       x4 -> turning rate (phidot)
-%       x5 -> vErr
-%       x6 -> wErr
-syms x1 x2 x3 x4 x5 x6
+syms x1 x2 x3 x4
 
 % Control variables: u1 u2 Ft psi
 %       u1 -> F1 + F2
@@ -29,15 +27,11 @@ syms x1 x2 x3 x4 x5 x6
 %       psi -> Thrust angle
 syms u1 u2 Ft psi
 
-vRef1=4500; wRef1=-0.798228518230201;
-
 % State Space
 F = [(u1/m)*cos(x2) + (Ft/m)*cos(x2 - psi) - (Fw/m)*sin(x2 + x3);
      (u1/(x1*m))*cos(2*x3 + x2) + (Ft/(x1*m))*cos(2*x3 + x2 + psi) + (Fw/(x1*m)) - x4;
      x4;
-     (width/(2*I))*u2 - (Ft/I)*(L/2 - bL)*sin(psi);
-     vRef1 - x1;
-     wRef1 - x3];
+     (width/(2*I))*u2 - (Ft/I)*(L/2 - bL)*sin(psi)];
  
 
 %% Create State Space Model
@@ -45,7 +39,7 @@ F = [(u1/m)*cos(x2) + (Ft/m)*cos(x2 - psi) - (Fw/m)*sin(x2 + x3);
 x=0; y=0; xdot=0; ydot=1; phi=pi/2; phidot=0; u=1; w=0; beta=0;
 
 % Creating list of state and control variables
-stateVars = [x1 x2 x3 x4 x5 x6];
+stateVars = [x1 x2 x3 x4];
 controlVars = [u1 u2 Ft psi];
 
 % Take partial derivatives of F with respect to states
@@ -55,8 +49,8 @@ Ax = jacobian(F, stateVars);
 Bx = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
-p = [1 0 0 0 0 0 0 0 m*g 0]; %%%%%%%%%%%% Vref-v and Wref-w instead of 0,0? %%%%%%%%%%%%%%%%%%%%%
-v = [x1 x2 x3 x4 x5 x6 u1 u2 Ft psi];
+p = [1 0 0 0 0 0 m*g 0]; 
+v = [x1 x2 x3 x4 u1 u2 Ft psi];
 A = double(subs(Ax,v,p));
 B = double(subs(Bx,v,p));
 
@@ -65,16 +59,14 @@ rank(ctrb(A,B)) % This should equal the number of states
 
 %% LQR Controller Design
 % LQR Control
-Q = [1e8 0 0 0 0 0;               % v
-     0 1 0 0 0 0;               % beta
-     0 0 0 0 0 0;                % phi
-     0 0 0 1e10 0 0;             % phidot
-     0 0 0 0 1 0;             % vErr
-     0 0 0 0 0 1];              % wErr
-R = [1 0 0 0;               % u1 = f1+f2
-     0 1 0 0;               % u2 = f1-f2
+Q = [1e9 0 0 0;               % v
+     0 1e3 0 0;               % beta
+     0 0 0 0;                % phi
+     0 0 0 1e13];              % phidot
+R = [1e2 0 0 0;               % u1 = f1+f2
+     0 1e2 0 0;               % u2 = f1-f2
      0 0 1e2 0;               % Ft
-     0 0 0 1e12];              % Psi 
+     0 0 0 1e14];              % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
@@ -88,7 +80,7 @@ k = 6;
 
 % Initial conditions array form
 Ustar = [0 0 m*g 0]';
-ystar = [0, 0, 0, 0, 0, 0]';
+ystar = [0, 0, 0, 0]';
 y1Init =  [x, y, xdot, ydot, phi, phidot]';  
 
 % Timestep
@@ -102,7 +94,7 @@ urec = [];
 wrec = [];
 
 % Control Loop
-for i=1:1
+for i=1:1000 % WHILE X AND Y ARE NOT CLOSE TO XFINAL AND YFINAL
     %%%% Compute e, alpha, and theta %%%%
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-phiP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
@@ -120,12 +112,12 @@ for i=1:1
     end
 
     %%%% INNER LOOP %%%%
-    for j=1:20000
+%     for j=1:20000
         disp(u);
         
-        %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
-        ystar = [uRef, 0, 0, wRef, 0, 0]';
-        y0 = [u, beta, phi, w, uRef-u, wRef-w]';
+        % Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
+        ystar = [uRef, 0, 0, wRef]';
+        y0 = [u, beta, phi, w]';
         
         % uK defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
         uK = -K*(y0-ystar);
@@ -170,7 +162,7 @@ for i=1:1
         % Solve ODE for new position
         [t, y1] = ode45(@(t,y1)odeFunction5(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init);
         
-        % Store last state and solve for current u,w
+        % Store last state and solve for current u,w,beta
         x = y1(end,1);
         y = y1(end,2);
         xdot = y1(end,3);
@@ -183,7 +175,7 @@ for i=1:1
 
         % Record results
         yrec1=[yrec1,[x y xdot ydot phi phidot u w beta]'];
-        trec1=[trec1, (i-1)*dt+t'];
+        trec1=[trec1, (j-1)*dt+t'];
         tmp=[ones(1,length(t))*U(1,1);
              ones(1,length(t))*U(2,1);
              ones(1,length(t))*U(3,1);
@@ -192,10 +184,12 @@ for i=1:1
 
         % Create new initial conditions array
         y1Init = y1(end,:)';
-    end
+%     end
 end
 
 % Plot x,y results
 figure(1)
 plot(yrec1(1,:), yrec1(2,:))
 axis equal
+
+
