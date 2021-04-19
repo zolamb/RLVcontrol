@@ -66,12 +66,12 @@ Q = [1e9 0 0 0;               % v
 R = [1e2 0 0 0;               % u1 = f1+f2
      0 1e2 0 0;               % u2 = f1-f2
      0 0 1e2 0;               % Ft
-     0 0 0 1e14];              % Psi 
+     0 0 0 1e18];              % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=0; yP=1500; phiP=pi/2; % we will use it in formulas for e and alpha
+xP=0; yP=1000; phiP=pi/2; % we will use it in formulas for e and alpha
 
 % Gains
 gamma = 3;
@@ -89,39 +89,41 @@ dt = 0.01;
 % Data recordings
 yrec1 = [];
 trec1 = [];
+trec2 = [];
 actuatorsRec = [];
-urec = [];
-wrec = [];
+uRefrec = [];
+wRefrec = [];
 
 % Control Loop
-for i=1:1000 % WHILE X AND Y ARE NOT CLOSE TO XFINAL AND YFINAL
-    %%%% Compute e, alpha, and theta %%%%
+e=sqrt((xP-x)^2+(yP-y)^2);
+for i=1:1000
+% while(e>100)
+    % Compute e, alpha, and theta
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-phiP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
     alpha=theta-(phi-phiP);
     alpha=atan2(sin(alpha),cos(alpha));
     
-    %%%% Update Controls %%%%
-    uRef = gamma*e*cos(alpha)
+    % Update Controls 
+    uRef = gamma*e*cos(alpha);
     if alpha <= 1e-50
       % lim alpha->0 (cos(alpha)*sin(alpha)/alpha) = 1
       wRef = k*alpha + gamma*cos(alpha)*sin(alpha)+...
-          gamma*h*theta
+          gamma*h*theta;
     else
-      wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha
+      wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
-
-    %%%% INNER LOOP %%%%
-%     for j=1:20000
-        disp(u);
         
+%     for j=1:1000
+        disp(w)
+
         % Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [uRef, 0, 0, wRef]';
         y0 = [u, beta, phi, w]';
-        
+
         % uK defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
         uK = -K*(y0-ystar);
-        
+
         % Converting to F1,F2 form
         uK = [(uK(1)+uK(2))/2 (uK(1)-uK(2))/2 uK(3) uK(4)]';
         U=Ustar+uK;
@@ -134,7 +136,7 @@ for i=1:1000 % WHILE X AND Y ARE NOT CLOSE TO XFINAL AND YFINAL
         else
            U(1,1)=U(1,1);
         end
-        
+
         if U(2,1)>0.5*m*g
             U(2,1)=0.5*m*g;
         elseif U(2,1)<=0
@@ -142,15 +144,15 @@ for i=1:1000 % WHILE X AND Y ARE NOT CLOSE TO XFINAL AND YFINAL
         else
            U(2,1)=U(2,1);
         end
-        
-        if U(3,1)>6*m*g
-            U(3,1)=6*m*g;
+
+        if U(3,1)>20*m*g
+            U(3,1)=20*m*g;
         elseif U(3,1)<=0
            U(3,1)=0; 
         else
            U(3,1)=U(3,1);
         end
-        
+
         if U(4,1)>pi/30 % 6 degrees
            U(4,1)=pi/30;
         elseif U(4,1)<-pi/30
@@ -161,7 +163,7 @@ for i=1:1000 % WHILE X AND Y ARE NOT CLOSE TO XFINAL AND YFINAL
 
         % Solve ODE for new position
         [t, y1] = ode45(@(t,y1)odeFunction5(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init);
-        
+
         % Store last state and solve for current u,w,beta
         x = y1(end,1);
         y = y1(end,2);
@@ -174,22 +176,73 @@ for i=1:1000 % WHILE X AND Y ARE NOT CLOSE TO XFINAL AND YFINAL
         beta = atan2(ydot,xdot) - phi;
 
         % Record results
-        yrec1=[yrec1,[x y xdot ydot phi phidot u w beta]'];
-        trec1=[trec1, (j-1)*dt+t'];
+        yrec1=[yrec1,y1'];
+        trec1=[trec1, (i-1)*dt+t'];
+        trec2=[trec2 (i-1)*dt+t(end)];
         tmp=[ones(1,length(t))*U(1,1);
              ones(1,length(t))*U(2,1);
              ones(1,length(t))*U(3,1);
              ones(1,length(t))*U(4,1)];
         actuatorsRec=[actuatorsRec tmp];
+        uRefrec = [uRefrec uRef];
+        wRefrec = [wRefrec wRef];
 
         % Create new initial conditions array
         y1Init = y1(end,:)';
 %     end
 end
 
+% Compute the u,w,beta values and add to yRec
+uList = sqrt(yrec1(3,:).^2 + yrec1(4,:).^2);
+wList = yrec1(6,:);
+betaList = atan2(yrec1(4,:),yrec1(3,:)) - yrec1(5,:);
+yrec1 = [yrec1; uList; wList; betaList];
+
 % Plot x,y results
 figure(1)
 plot(yrec1(1,:), yrec1(2,:))
+title('Position')
 axis equal
 
+figure(2)
+plot(trec1(1,:), actuatorsRec(1,:))
+title('f1')
 
+figure(3)
+plot(trec1(1,:), actuatorsRec(2,:))
+title('f2')
+
+figure(4)
+plot(trec1(1,:), actuatorsRec(3,:))
+title('Ft')
+
+figure(5)
+plot(trec1(1,:), actuatorsRec(4,:))
+title('psi')
+
+
+
+% 
+% figure(2)
+% plot(trec1(1,:), yrec1(9,:))
+% title('beta')
+% 
+% figure(3)
+% plot(trec1(1,:), yrec1(5,:)*180/pi)
+% title('phi')
+% 
+% figure(4)
+% plot(trec1(1,:), yrec1(7,:))
+% title('velocity')
+% hold on;
+% plot(trec2(1,:), uRefrec(1,:))
+% hold off;
+% 
+% figure(5)
+% plot(trec1(1,:), yrec1(8,:))
+% title('omega')
+% hold on;
+% plot(trec2(1,:), wRefrec(1,:))
+% hold off;
+% 
+% 

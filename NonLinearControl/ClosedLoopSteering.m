@@ -65,21 +65,21 @@ rank(ctrb(A,B)) % This should equal the number of states
 
 %% LQR Controller Design
 % LQR Control
-Q = [1e8 0 0 0 0 0;               % v
-     0 1 0 0 0 0;               % beta
+Q = [1e9 0 0 0 0 0;               % v
+     0 1e3 0 0 0 0;               % beta
      0 0 0 0 0 0;                % phi
-     0 0 0 1e10 0 0;             % phidot
-     0 0 0 0 1 0;             % vErr
-     0 0 0 0 0 1];              % wErr
-R = [1 0 0 0;               % u1 = f1+f2
-     0 1 0 0;               % u2 = f1-f2
+     0 0 0 1e13 0 0;             % phidot
+     0 0 0 0 1e3 0;             % vErr
+     0 0 0 0 0 1e3];              % wErr
+R = [1e2 0 0 0;               % u1 = f1+f2
+     0 1e2 0 0;               % u2 = f1-f2
      0 0 1e2 0;               % Ft
-     0 0 0 1e12];              % Psi 
+     0 0 0 1e14];              % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=0; yP=1500; phiP=pi/2; % we will use it in formulas for e and alpha
+xP=250; yP=1500; phiP=pi/2; % we will use it in formulas for e and alpha
 
 % Gains
 gamma = 3;
@@ -102,7 +102,7 @@ urec = [];
 wrec = [];
 
 % Control Loop
-for i=1:1
+for i=1:1000
     %%%% Compute e, alpha, and theta %%%%
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-phiP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
@@ -120,8 +120,8 @@ for i=1:1
     end
 
     %%%% INNER LOOP %%%%
-    for j=1:20000
-        disp(u);
+%     for j=1:20000
+%         disp(u);
         
         %%%% Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [uRef, 0, 0, wRef, 0, 0]';
@@ -192,7 +192,7 @@ for i=1:1
 
         % Create new initial conditions array
         y1Init = y1(end,:)';
-    end
+%     end
 end
 
 % Plot x,y results
