@@ -12,10 +12,15 @@ x=0; y=0; phi=3*pi/4;
 u = 0;      % Speed
 w = 0;      % Angular speed
 
-% Gains
-gamma = 3;
+% Less aggressive gains
+gamma = 0.25;
 h = 1;
-k = 6;
+k = 0.5;
+
+% More aggressive gains
+% gamma = 3;
+% h = 1;
+% k = 6;
 
 % Timestep
 dt = 0.01;
@@ -26,7 +31,7 @@ wrec = [];
 trec=[];
 
 disp("here")
-for i=1:500
+for i=1:2500
     % Compute e, alpha, and theta
     % phi - robot heading, theta - heading of the parking pose
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
@@ -38,20 +43,20 @@ for i=1:500
     alpha=atan2(sin(alpha),cos(alpha));
 
     % Update controls
-    u = gamma*e*cos(alpha)
+    u = gamma*e*cos(alpha);
     if alpha <= 1e-50
       % lim alpha->0 (cos(alpha)*sin(alpha)/alpha) = 1
       w = k*alpha + gamma*cos(alpha)*sin(alpha)+...
-          gamma*h*theta      
+          gamma*h*theta;
     else
-      w = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha
+      w = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
     
     % Update initial conditions
     y2Init=[x;y;phi];
     
     % Solve cartesian ODE for small timestep
-    [t, y2] = ode45(@(t,y2)odeFunction32(t, y2, u, w), [0 dt], y2Init);
+    [t, y2] = ode45(@(t,y2)odeFunction2(t, y2, u, w), [0 dt], y2Init);
     
     % Record results
     yrec = [yrec, y2'];
@@ -71,5 +76,7 @@ figure(2)
 plot(trec,yrec(3,:)*180/pi)
 figure(3)
 plot(trec,urec)
+title('velocity')
 figure(4)
 plot(trec,wrec)
+title('omega')
