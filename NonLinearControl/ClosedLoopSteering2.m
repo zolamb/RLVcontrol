@@ -71,12 +71,17 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=0; yP=3000; phiP=pi/2; % we will use it in formulas for e and alpha
+xP=0; yP=2000; phiP=pi; % we will use it in formulas for e and alpha
 
 % Gains
-gamma = 3;
+% gamma = 3;
+% h = 1;
+% k = 6;
+
+% Less aggressive gains
+gamma = 0.25;
 h = 1;
-k = 6;
+k = 0.5;
 
 % Initial conditions array form
 Ustar = [0 0 m*g 0]';
@@ -96,8 +101,8 @@ wRefrec = [];
 
 % Control Loop
 e=sqrt((xP-x)^2+(yP-y)^2);
-for i=1:700
-% while(e>100)
+% for i=1:3000
+while(e>100)
     % Compute e, alpha, and theta
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-phiP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
@@ -204,21 +209,21 @@ plot(yrec1(1,:), yrec1(2,:))
 title('Position')
 axis equal
 
-figure(2)
-plot(trec1(1,:), actuatorsRec(1,:))
-title('f1')
-
-figure(3)
-plot(trec1(1,:), actuatorsRec(2,:))
-title('f2')
-
-figure(4)
-plot(trec1(1,:), actuatorsRec(3,:))
-title('Ft')
-
-figure(5)
-plot(trec1(1,:), actuatorsRec(4,:))
-title('psi')
+% figure(2)
+% plot(trec1(1,:), actuatorsRec(1,:))
+% title('f1')
+% 
+% figure(3)
+% plot(trec1(1,:), actuatorsRec(2,:))
+% title('f2')
+% 
+% figure(4)
+% plot(trec1(1,:), actuatorsRec(3,:))
+% title('Ft')
+% 
+% figure(5)
+% plot(trec1(1,:), actuatorsRec(4,:))
+% title('psi')
 
 
 
