@@ -49,7 +49,7 @@ Ax = jacobian(F, stateVars);
 Bx = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
-p = [1 0 0 0 0 0 m*g 0]; 
+p = [1 0 pi/2 0 0 0 m*g 0]; 
 v = [x1 x2 x3 x4 u1 u2 Ft psi];
 A = double(subs(Ax,v,p));
 B = double(subs(Bx,v,p));
@@ -59,13 +59,13 @@ rank(ctrb(A,B)) % This should equal the number of states
 
 %% LQR Controller Design
 % LQR Control
-Q = [1e9 0 0 0;               % v
-     0 1e3 0 0;               % beta
+Q = [1e15 0 0 0;               % v
+     0 1e8 0 0;               % beta
      0 0 0 0;                % phi
-     0 0 0 1e13];              % phidot
+     0 0 0 1e11];              % phidot
 R = [1e2 0 0 0;               % u1 = f1+f2
      0 1e2 0 0;               % u2 = f1-f2
-     0 0 1e2 0;               % Ft
+     0 0 1e4 0;               % Ft
      0 0 0 1e18];              % Psi 
 K = lqr(A, B, Q, R);
 
@@ -101,7 +101,7 @@ wRefrec = [];
 
 % Control Loop
 e=sqrt((xP-x)^2+(yP-y)^2);
-for i=1:1000
+for i=1:1
 % while(e>100)
     % Compute e, alpha, and theta
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
@@ -119,7 +119,7 @@ for i=1:1000
       wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
         
-%     for j=1:2000
+    for j=1:2000
         disp(u)
 
         % Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
@@ -182,8 +182,8 @@ for i=1:1000
 
         % Record results
         yrec1=[yrec1,y1'];
-        trec1=[trec1, (i-1)*dt+t'];
-        trec2=[trec2 (i-1)*dt+t(end)];
+        trec1=[trec1, (j-1)*dt+t'];
+        trec2=[trec2 (j-1)*dt+t(end)];
         tmp=[ones(1,length(t))*U(1,1);
              ones(1,length(t))*U(2,1);
              ones(1,length(t))*U(3,1);
@@ -194,7 +194,7 @@ for i=1:1000
 
         % Create new initial conditions array
         y1Init = y1(end,:)';
-%     end
+    end
 end
 
 % Compute the u,w,beta values and add to yRec
@@ -221,33 +221,37 @@ figure(4)
 plot(trec1(1,:), actuatorsRec(3,:))
 title('Ft')
 
+
+
 figure(5)
-plot(trec1(1,:), actuatorsRec(4,:))
+plot(trec1(1,:), actuatorsRec(4,:)*180/pi)
 title('psi')
 
-
-
-
 figure(6)
-plot(trec1(1,:), yrec1(9,:)*180/pi)
-title('beta')
-
-figure(7)
 plot(trec1(1,:), yrec1(5,:)*180/pi)
 title('phi')
 
-figure(8)
+
+
+figure(7)
 plot(trec1(1,:), yrec1(7,:))
 title('velocity')
 hold on;
 plot(trec2(1,:), uRefrec(1,:))
 hold off;
 
-figure(9)
+figure(8)
 plot(trec1(1,:), yrec1(8,:)*180/pi)
 title('omega')
 hold on;
 plot(trec2(1,:), wRefrec(1,:))
+hold off;
+
+figure(9)
+plot(trec1(1,:), yrec1(9,:)*180/pi)
+title('beta')
+hold on;
+plot(trec1(1,:), zeros(1, length(trec1)));
 hold off;
 
 
