@@ -29,7 +29,7 @@ syms u1 u2 Ft psi
 
 % State Space
 F = [(u1/m)*cos(x2) + (Ft/m)*cos(x2 - psi) - (Fw/m)*sin(x2 + x3);
-     (u1/(x1*m))*cos(2*x3 + x2) + (Ft/(x1*m))*cos(2*x3 + x2 + psi) + (Fw/(x1*m)) - x4;
+     -(u1/(x1*m))*sin(x2) + (Ft/(x1*m))*sin(psi - x2) - (Fw/(x1*m))*cos(x2 + x3) - x4;
      x4;
      (width/(2*I))*u2 - (Ft/I)*(L/2 - bL)*sin(psi)];
  
@@ -71,7 +71,7 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=0; yP=2000; phiP=pi; % we will use it in formulas for e and alpha
+xP=0; yP=2000; phiP=pi/2; % we will use it in formulas for e and alpha
 
 % Gains
 % gamma = 3;
@@ -101,8 +101,8 @@ wRefrec = [];
 
 % Control Loop
 e=sqrt((xP-x)^2+(yP-y)^2);
-% for i=1:3000
-while(e>100)
+for i=1:1000
+% while(e>100)
     % Compute e, alpha, and theta
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-phiP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
@@ -119,8 +119,8 @@ while(e>100)
       wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
         
-%     for j=1:1000
-        disp(w)
+%     for j=1:2000
+        disp(u)
 
         % Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
         ystar = [uRef, 0, 0, wRef]';
@@ -209,45 +209,45 @@ plot(yrec1(1,:), yrec1(2,:))
 title('Position')
 axis equal
 
-% figure(2)
-% plot(trec1(1,:), actuatorsRec(1,:))
-% title('f1')
-% 
-% figure(3)
-% plot(trec1(1,:), actuatorsRec(2,:))
-% title('f2')
-% 
-% figure(4)
-% plot(trec1(1,:), actuatorsRec(3,:))
-% title('Ft')
-% 
-% figure(5)
-% plot(trec1(1,:), actuatorsRec(4,:))
-% title('psi')
+figure(2)
+plot(trec1(1,:), actuatorsRec(1,:))
+title('f1')
+
+figure(3)
+plot(trec1(1,:), actuatorsRec(2,:))
+title('f2')
+
+figure(4)
+plot(trec1(1,:), actuatorsRec(3,:))
+title('Ft')
+
+figure(5)
+plot(trec1(1,:), actuatorsRec(4,:))
+title('psi')
 
 
 
-% 
-% figure(2)
-% plot(trec1(1,:), yrec1(9,:))
-% title('beta')
-% 
-% figure(3)
-% plot(trec1(1,:), yrec1(5,:)*180/pi)
-% title('phi')
-% 
-% figure(4)
-% plot(trec1(1,:), yrec1(7,:))
-% title('velocity')
-% hold on;
-% plot(trec2(1,:), uRefrec(1,:))
-% hold off;
-% 
-% figure(5)
-% plot(trec1(1,:), yrec1(8,:))
-% title('omega')
-% hold on;
-% plot(trec2(1,:), wRefrec(1,:))
-% hold off;
-% 
-% 
+
+figure(6)
+plot(trec1(1,:), yrec1(9,:)*180/pi)
+title('beta')
+
+figure(7)
+plot(trec1(1,:), yrec1(5,:)*180/pi)
+title('phi')
+
+figure(8)
+plot(trec1(1,:), yrec1(7,:))
+title('velocity')
+hold on;
+plot(trec2(1,:), uRefrec(1,:))
+hold off;
+
+figure(9)
+plot(trec1(1,:), yrec1(8,:)*180/pi)
+title('omega')
+hold on;
+plot(trec2(1,:), wRefrec(1,:))
+hold off;
+
+
