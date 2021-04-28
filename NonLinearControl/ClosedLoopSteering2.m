@@ -59,14 +59,14 @@ rank(ctrb(A,B)) % This should equal the number of states
 
 %% LQR Controller Design
 % LQR Control
-Q = [1e15 0 0 0;               % v
-     0 1e8 0 0;               % beta
-     0 0 0 0;                % phi
-     0 0 0 1e11];              % phidot
-R = [1e2 0 0 0;               % u1 = f1+f2
-     0 1e2 0 0;               % u2 = f1-f2
-     0 0 1e4 0;               % Ft
-     0 0 0 1e18];              % Psi 
+Q = [1e5 0 0 0;               % v
+     0 1e7 0 0;               % beta
+     0 0 1 0;                % phi
+     0 0 0 1e5];              % phidot
+R = [1e-4 0 0 0;               % u1 = f1+f2
+     0 1e-4 0 0;               % u2 = f1-f2
+     0 0 1e2 0;               % Ft
+     0 0 0 1e14];              % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
@@ -101,7 +101,8 @@ wRefrec = [];
 
 % Control Loop
 e=sqrt((xP-x)^2+(yP-y)^2);
-for i=1:1
+for i=1:2000
+% i = 1;
 % while(e>100)
     % Compute e, alpha, and theta
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
@@ -119,11 +120,11 @@ for i=1:1
       wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
         
-    for j=1:2000
+%     for j=1:4000
         disp(u)
 
         % Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
-        ystar = [uRef, 0, 0, wRef]';
+        ystar = [uRef, 0, phi, wRef]';
         y0 = [u, beta, phi, w]';
 
         % uK defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
@@ -134,18 +135,18 @@ for i=1:1
         U=Ustar+uK;
 
         % Apply saturations
-        if U(1,1)>5*m*g
-            U(1,1)=5*m*g;
-        elseif U(1,1)<-5*m*g
-           U(1,1)=-5*m*g; 
+        if U(1,1)>10*m*g
+            U(1,1)=10*m*g;
+        elseif U(1,1)<-10*m*g
+           U(1,1)=-10*m*g; 
         else
            U(1,1)=U(1,1);
         end
 
-        if U(2,1)>5*m*g
-            U(2,1)=5*m*g;
-        elseif U(2,1)<-5*m*g
-           U(2,1)=-5*m*g; 
+        if U(2,1)>10*m*g
+            U(2,1)=10*m*g;
+        elseif U(2,1)<-10*m*g
+           U(2,1)=-10*m*g; 
         else
            U(2,1)=U(2,1);
         end
@@ -182,8 +183,8 @@ for i=1:1
 
         % Record results
         yrec1=[yrec1,y1'];
-        trec1=[trec1, (j-1)*dt+t'];
-        trec2=[trec2 (j-1)*dt+t(end)];
+        trec1=[trec1, (i-1)*dt+t'];
+        trec2=[trec2 (i-1)*dt+t(end)];
         tmp=[ones(1,length(t))*U(1,1);
              ones(1,length(t))*U(2,1);
              ones(1,length(t))*U(3,1);
@@ -194,7 +195,8 @@ for i=1:1
 
         % Create new initial conditions array
         y1Init = y1(end,:)';
-    end
+%     end
+%     i = i+1;
 end
 
 % Compute the u,w,beta values and add to yRec
