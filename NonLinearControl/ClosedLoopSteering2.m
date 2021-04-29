@@ -25,13 +25,13 @@ syms x1 x2 x3 x4
 %       u2 -> F1 - F2
 %       Ft -> Thrust
 %       psi -> Thrust angle
-syms u1 u2 Ft psi
+syms F1 F2 Ft psi
 
 % State Space
-F = [(u1/m)*cos(x2) + (Ft/m)*cos(x2 - psi) - (Fw/m)*sin(x2 + x3);
-     -(u1/(x1*m))*sin(x2) + (Ft/(x1*m))*sin(psi - x2) - (Fw/(x1*m))*cos(x2 + x3) - x4;
+F = [((F1 + F2)/m)*cos(x2) + (Ft/m)*cos(x2 - psi) - (Fw/m)*sin(x2 + x3);
+     -((F1 + F2)/(x1*m))*sin(x2) + (Ft/(x1*m))*sin(psi - x2) - (Fw/(x1*m))*cos(x2 + x3) - x4;
      x4;
-     (width/(2*I))*u2 - (Ft/I)*(L/2 - bL)*sin(psi)];
+     (width/(2*I))*(F1 - F2) - (Ft/I)*(L/2 - bL)*sin(psi)];
  
 
 %% Create State Space Model
@@ -40,7 +40,7 @@ x=0; y=0; xdot=0; ydot=1; phi=pi/2; phidot=0; u=1; w=0; beta=0;
 
 % Creating list of state and control variables
 stateVars = [x1 x2 x3 x4];
-controlVars = [u1 u2 Ft psi];
+controlVars = [F1 F2 Ft psi];
 
 % Take partial derivatives of F with respect to states
 Ax = jacobian(F, stateVars);
@@ -50,7 +50,7 @@ Bx = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
 p = [1 0 pi/2 0 0 0 m*g 0]; 
-v = [x1 x2 x3 x4 u1 u2 Ft psi];
+v = [x1 x2 x3 x4 F1 F2 Ft psi];
 A = double(subs(Ax,v,p));
 B = double(subs(Bx,v,p));
 
@@ -71,7 +71,7 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=0; yP=2000; phiP=pi/2; % we will use it in formulas for e and alpha
+xP=500; yP=500; phiP=pi/2; % we will use it in formulas for e and alpha
 
 % Gains
 % gamma = 3;
@@ -79,9 +79,15 @@ xP=0; yP=2000; phiP=pi/2; % we will use it in formulas for e and alpha
 % k = 6;
 
 % Less aggressive gains
-gamma = 0.25;
-h = 1;
-k = 0.5;
+% gamma = 0.25;
+% h = 1;
+% k = 0.5;
+
+% Less Less aggressive gains
+gamma = 0.1;
+h = 0.5;
+k = 0.25;
+
 
 % Initial conditions array form
 Ustar = [0 0 m*g 0]';
@@ -103,7 +109,7 @@ wRefrec = [];
 e=sqrt((xP-x)^2+(yP-y)^2);
 for i=1:2000
 % i = 1;
-% while(e>100)
+% while(e>50)
     % Compute e, alpha, and theta
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-phiP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
@@ -131,7 +137,7 @@ for i=1:2000
         uK = -K*(y0-ystar);
 
         % Converting to F1,F2 form
-        uK = [(uK(1)+uK(2))/2 (uK(1)-uK(2))/2 uK(3) uK(4)]';
+%         uK = [(uK(1)+uK(2))/2 (uK(1)-uK(2))/2 uK(3) uK(4)]';
         U=Ustar+uK;
 
         % Apply saturations
