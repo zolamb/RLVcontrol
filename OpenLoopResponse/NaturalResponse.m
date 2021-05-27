@@ -29,6 +29,8 @@ tspan = 0:0.2:100;
 % Plot position
 figure(1);
 plot(y(:,1), y(:,2));
+hold on;
+plot(y(end,1), y(end,2), "bo");
 title("Position");
 xlabel("x (m)");
 ylabel("y (m)");
@@ -59,6 +61,8 @@ tspan = 0:0.2:100;
 % Plot position
 figure(3);
 plot(y(:,1), y(:,2));
+hold on;
+plot(y(end,1), y(end,2), "bo");
 title("Position");
 xlabel("x (m)");
 ylabel("y (m)");
@@ -74,6 +78,8 @@ tspan = 0:0.2:100;
 % Plot position
 figure(4);
 plot(y(:,1), y(:,2));
+hold on;
+plot(y(end,1), y(end,2), "bo");
 title("Position");
 xlabel("x (m)");
 ylabel("y (m)");

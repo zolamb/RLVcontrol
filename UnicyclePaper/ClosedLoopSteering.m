@@ -30,17 +30,14 @@ urec = [];
 wrec = [];
 trec=[];
 
-disp("here")
+
 for i=1:2500
     % Compute e, alpha, and theta
     % phi - robot heading, theta - heading of the parking pose
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
-    
     theta=atan2(yP-y,xP-x)-thetaP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
-%     theta=atan2(yP-y,xP-x);
     alpha=theta-(phi-thetaP);
-%     alpha=theta-phi;
-    alpha=atan2(sin(alpha),cos(alpha));
+    alpha=atan2(sin(alpha),cos(alpha)); % Wrap angle to +- pi
 
     % Update controls
     u = gamma*e*cos(alpha);
@@ -51,6 +48,7 @@ for i=1:2500
     else
       w = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
+    
     
     % Update initial conditions
     y2Init=[x;y;phi];
@@ -71,12 +69,17 @@ end
 % Plot cartesian results
 figure(1)
 plot(yrec(1,:), yrec(2,:))
+title("Position");
+xlabel("x");
+ylabel("y");
+hold on;
+plot(yrec(1,end), yrec(2,end), "bo")
 axis equal
-figure(2)
-plot(trec,yrec(3,:)*180/pi)
-figure(3)
-plot(trec,urec)
-title('velocity')
-figure(4)
-plot(trec,wrec)
-title('omega')
+% figure(2)
+% plot(trec,yrec(3,:)*180/pi)
+% figure(3)
+% plot(trec,urec)
+% title('velocity')
+% figure(4)
+% plot(trec,wrec)
+% title('omega')

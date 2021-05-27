@@ -32,7 +32,6 @@ F = [((F1 + F2)/m)*cos(x2) + (Ft/m)*cos(x2 - psi) - (Fw/m)*sin(x2 + x3);
      -((F1 + F2)/(x1*m))*sin(x2) + (Ft/(x1*m))*sin(psi - x2) - (Fw/(x1*m))*cos(x2 + x3) - x4;
      x4;
      (width/(2*I))*(F1 - F2) - (Ft/I)*(L/2 - bL)*sin(psi)];
- 
 
 %% Create State Space Model
 %Initial condition:
@@ -49,7 +48,7 @@ Ax = jacobian(F, stateVars);
 Bx = jacobian(F, controlVars);
 
 % Linearize about the trim state 'p'
-p = [1 0 pi/2 0 0 0 m*g 0]; 
+p = [u beta phi phidot 0 0 m*g 0]; 
 v = [x1 x2 x3 x4 F1 F2 Ft psi];
 A = double(subs(Ax,v,p));
 B = double(subs(Bx,v,p));
@@ -59,19 +58,19 @@ rank(ctrb(A,B)) % This should equal the number of states
 
 %% LQR Controller Design
 % LQR Control
-Q = [1e5 0 0 0;               % v
-     0 1e7 0 0;               % beta
+Q = [1e12 0 0 0;               % v
+     0 1e18 0 0;               % beta
      0 0 1 0;                % phi
-     0 0 0 1e5];              % phidot
-R = [1e-4 0 0 0;               % u1 = f1+f2
-     0 1e-4 0 0;               % u2 = f1-f2
-     0 0 1e2 0;               % Ft
-     0 0 0 1e14];              % Psi 
+     0 0 0 1e12];              % phidot
+R = [1e-1 0 0 0;               % u1 = f1+f2
+     0 1e-1 0 0;               % u2 = f1-f2
+     0 0 1 0;               % Ft
+     0 0 0 1e18];              % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=500; yP=500; phiP=pi/2; % we will use it in formulas for e and alpha
+xP=100; yP=500; phiP=pi/2; % we will use it in formulas for e and alpha
 
 % Gains
 % gamma = 3;
@@ -84,10 +83,9 @@ xP=500; yP=500; phiP=pi/2; % we will use it in formulas for e and alpha
 % k = 0.5;
 
 % Less Less aggressive gains
-gamma = 0.1;
-h = 0.5;
-k = 0.25;
-
+gamma = 0.05;
+h = 0.25;
+k = 0.1;
 
 % Initial conditions array form
 Ustar = [0 0 m*g 0]';
@@ -106,10 +104,11 @@ uRefrec = [];
 wRefrec = [];
 
 % Control Loop
-e=sqrt((xP-x)^2+(yP-y)^2);
-for i=1:2000
-% i = 1;
-% while(e>50)
+e = 100;
+% for i=1:4000
+i = 1;
+flag = 1;
+while(e>5)
     % Compute e, alpha, and theta
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-phiP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
@@ -125,84 +124,88 @@ for i=1:2000
     else
       wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
-        
-%     for j=1:4000
-        disp(u)
+    
+    wRef*180/pi
 
-        % Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
-        ystar = [uRef, 0, phi, wRef]';
-        y0 = [u, beta, phi, w]';
+    % Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
+    ystar = [uRef, 0, phi, wRef]';
+    y0 = [u, beta, phi, w]';
 
-        % uK defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
-        uK = -K*(y0-ystar);
+    % uK defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
+    uK = -K*(y0-ystar);
 
-        % Converting to F1,F2 form
-%         uK = [(uK(1)+uK(2))/2 (uK(1)-uK(2))/2 uK(3) uK(4)]';
-        U=Ustar+uK;
+    % Converting to F1,F2 form
+    % uK = [(uK(1)+uK(2))/2 (uK(1)-uK(2))/2 uK(3) uK(4)]';
+    U=Ustar+uK;
 
-        % Apply saturations
-        if U(1,1)>10*m*g
-            U(1,1)=10*m*g;
-        elseif U(1,1)<-10*m*g
-           U(1,1)=-10*m*g; 
-        else
-           U(1,1)=U(1,1);
-        end
+    % Apply saturations
+    if U(1,1)>10*m*g
+        U(1,1)=10*m*g;
+    elseif U(1,1)<-10*m*g
+       U(1,1)=-10*m*g; 
+    else
+       U(1,1)=U(1,1);
+    end
 
-        if U(2,1)>10*m*g
-            U(2,1)=10*m*g;
-        elseif U(2,1)<-10*m*g
-           U(2,1)=-10*m*g; 
-        else
-           U(2,1)=U(2,1);
-        end
+    if U(2,1)>10*m*g
+        U(2,1)=10*m*g;
+    elseif U(2,1)<-10*m*g
+       U(2,1)=-10*m*g; 
+    else
+       U(2,1)=U(2,1);
+    end
 
-        if U(3,1)>20*m*g
-            U(3,1)=20*m*g;
-        elseif U(3,1)<=0
-           U(3,1)=0; 
-        else
-           U(3,1)=U(3,1);
-        end
+    if U(3,1)>20*m*g
+        U(3,1)=20*m*g;
+    elseif U(3,1)<=0
+       U(3,1)=0; 
+    else
+       U(3,1)=U(3,1);
+    end
 
-        if U(4,1)>pi/30 % 6 degrees
-           U(4,1)=pi/30;
-        elseif U(4,1)<-pi/30
-           U(4,1)=-pi/30; 
-        else
-           U(4,1)=U(4,1);
-        end
+    if U(4,1)>pi/15 % 6 degrees
+       U(4,1)=pi/15;
+    elseif U(4,1)<-pi/15
+       U(4,1)=-pi/15; 
+    else
+       U(4,1)=U(4,1);
+    end
 
-        % Solve ODE for new position
-        [t, y1] = ode45(@(t,y1)odeFunction5(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init);
+    % Solve ODE for new position
+    [t, y1] = ode45(@(t,y1)odeFunction5(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init);
 
-        % Store last state and solve for current u,w,beta
-        x = y1(end,1);
-        y = y1(end,2);
-        xdot = y1(end,3);
-        ydot = y1(end,4);
-        phi = y1(end,5);
-        phidot = y1(end,6);
-        u = sqrt(xdot^2 + ydot^2);
-        w = phidot;
-        beta = atan2(ydot,xdot) - phi;
+    % Store last state and solve for current u,w,beta
+    x = y1(end,1);
+    y = y1(end,2);
+    xdot = y1(end,3);
+    ydot = y1(end,4);
+    phi = y1(end,5);
+    phidot = y1(end,6);
+    u = sqrt(xdot^2 + ydot^2);
+    w = phidot;
+    beta = atan2(ydot,xdot) - phi;
 
-        % Record results
-        yrec1=[yrec1,y1'];
-        trec1=[trec1, (i-1)*dt+t'];
-        trec2=[trec2 (i-1)*dt+t(end)];
-        tmp=[ones(1,length(t))*U(1,1);
-             ones(1,length(t))*U(2,1);
-             ones(1,length(t))*U(3,1);
-             ones(1,length(t))*U(4,1)];
-        actuatorsRec=[actuatorsRec tmp];
-        uRefrec = [uRefrec uRef];
-        wRefrec = [wRefrec wRef];
+    % Record results
+    yrec1=[yrec1,y1'];
+    trec1=[trec1, (i-1)*dt+t'];
+    trec2=[trec2 (i-1)*dt+t(end)];
+    tmp=[ones(1,length(t))*U(1,1);
+         ones(1,length(t))*U(2,1);
+         ones(1,length(t))*U(3,1);
+         ones(1,length(t))*U(4,1)];
+    actuatorsRec=[actuatorsRec tmp];
+    uRefrec = [uRefrec uRef];
+    wRefrec = [wRefrec wRef];
+    
+    
+    
 
-        % Create new initial conditions array
-        y1Init = y1(end,:)';
-%     end
-%     i = i+1;
+    % Create new initial conditions array
+    y1Init = y1(end,:)';
+    i = i + 1;
+    if(i>8500)
+        break
+    end
 end
 
 % Compute the u,w,beta values and add to yRec
@@ -212,10 +215,19 @@ betaList = atan2(yrec1(4,:),yrec1(3,:)) - yrec1(5,:);
 yrec1 = [yrec1; uList; wList; betaList];
 
 % Plot x,y results
+load("unicycleRefs");
+
 figure(1)
 plot(yrec1(1,:), yrec1(2,:))
+hold on;
+plot(xRefs, yRefs, "m--")
+plot(yrec1(1,end), yrec1(2,end), "bo")
+legend("Rocket Position","Kinematic Solution Reference", "Target Location", "location", 'northwest')
+hold off;
 title('Position')
-axis equal
+xlabel("x(m)")
+ylabel("y(m)")
+grid on
 
 figure(2)
 plot(trec1(1,:), actuatorsRec(1,:))
@@ -242,24 +254,34 @@ title('phi')
 
 
 figure(7)
+subplot(3,1,1)
 plot(trec1(1,:), yrec1(7,:))
-title('velocity')
+title('Velocity (v)')
 hold on;
-plot(trec2(1,:), uRefrec(1,:))
+plot(trec2(1,:), uRefrec(1,:), "m--")
 hold off;
+xlabel("Time(s)")
+ylabel("Velocity(m/s)")
+grid on
 
-figure(8)
+% figure(8)
+subplot(3,1,2)
 plot(trec1(1,:), yrec1(8,:)*180/pi)
-title('omega')
+title('Angular Velocity (omega)')
 hold on;
-plot(trec2(1,:), wRefrec(1,:))
+plot(trec2(1,:), wRefrec(1,:)*180/pi, "m--")
 hold off;
+xlabel("Time(s)")
+ylabel("Angular Velocity(deg/s)")
+grid on
 
-figure(9)
+% figure(9)
+subplot(3,1,3)
 plot(trec1(1,:), yrec1(9,:)*180/pi)
-title('beta')
+title('Sideslip (beta)')
 hold on;
-plot(trec1(1,:), zeros(1, length(trec1)));
+plot(trec1(1,:), zeros(1, length(trec1)), "m--");
 hold off;
-
-
+xlabel("Time(s)")
+ylabel("Sideslip(deg)")
+grid on

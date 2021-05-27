@@ -98,14 +98,14 @@ initial(sys, y0)
 
 %% Discrete Time Control
 Ustar = [0 0 m*g 0]'; % control at the point of linearization  
-ystar = [500, 900, 0, 0, 0, 0]'; %state space point of linearization
+ystar = [0, 1000, 0, 0, 0, 0]'; %state space point of linearization
 % ystar = [720, 820, 0, 0, 0, 0]'; %state space point of linearization
-y0 =  [600, 1100, 0, 0, 0, 0]'; %initial state  
+y0 =  [0, 0, 0, 0, 0, 0]'; %initial state  
 dt=0.01;
 xRec=[];
 tRec=[];
 urec=[];
-for i=1:6000
+for i=1:2000
      u = -K*(y0-ystar);% feedback control (small signals) 
      % defined as u(1)=f1+f2, u(2)=f1-f2, u(3)=ft, u(4)=psi
      ur = [(u(1)+u(2))/2 (u(1)-u(2))/2 u(3) u(4)]'; % Converting to F1,F2 form
@@ -154,21 +154,33 @@ end
 %% Plot Discrete Response
 % Figure 1 - x position
 figure(1)
+subplot(3,1,1)
 plot(tRec,xRec(1,:));
+hold on
+plot(tRec,ones(length(tRec),1)*ystar(1,1), "m--");
+hold off
 title('X position')
 ylabel('x (m)')
 xlabel('t (s)')
 
 % Figure 2 - y position
-figure(2)
+% figure(2)
+subplot(3,1,2)
 plot(tRec,xRec(2,:));
+hold on
+plot(tRec,ones(length(tRec),1)*ystar(2,1), "m--");
+hold off
 title('Y position')
 ylabel('y (m)')
 xlabel('t (s)')
 
 % Figure 3 - body angle theta
-figure(3)
+% figure(3)
+subplot(3,1,3)
 plot(tRec,xRec(3,:)*180/pi); % *180/pi
+hold on
+plot(tRec,ones(length(tRec),1)*ystar(3,1), "m--");
+hold off
 title('Body angle theta')
 ylabel('theta (deg)')
 xlabel('t (s)')
@@ -191,8 +203,11 @@ xlabel('t (s)')
 % Figure 6 - Position
 figure(6)
 plot(xRec(1,:),xRec(2,:))
+hold on
+plot(xRec(1,end),xRec(2,end), "bo")
+legend("Rocket Position", "Target Location")
+hold off
 title('Position')
 ylabel('y (m)')
 xlabel('x (m)')
-
 
