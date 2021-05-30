@@ -57,15 +57,25 @@ B = double(subs(Bx,v,p));
 rank(ctrb(A,B)) % This should equal the number of states
 
 %% LQR Controller Design
+% % LQR Control
+% Q = [1e12 0 0 0;               % v
+%      0 1e18 0 0;               % beta
+%      0 0 1 0;                % phi
+%      0 0 0 1e12];              % phidot
+% R = [1e-1 0 0 0;               % u1 = f1+f2
+%      0 1e-1 0 0;               % u2 = f1-f2
+%      0 0 1 0;               % Ft
+%      0 0 0 1e18];              % Psi 
+% K = lqr(A, B, Q, R);
 % LQR Control
-Q = [1e12 0 0 0;               % v
-     0 1e18 0 0;               % beta
+Q = [1e14 0 0 0;               % v
+     0 1e16 0 0;               % beta
      0 0 1 0;                % phi
-     0 0 0 1e12];              % phidot
-R = [1e-1 0 0 0;               % u1 = f1+f2
-     0 1e-1 0 0;               % u2 = f1-f2
+     0 0 0 1e18];              % phidot
+R = [1 0 0 0;               % u1 = f1+f2
+     0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
-     0 0 0 1e18];              % Psi 
+     0 0 0 1e16];              % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
@@ -203,7 +213,7 @@ while(e>5)
     % Create new initial conditions array
     y1Init = y1(end,:)';
     i = i + 1;
-    if(i>8500)
+    if(i>4500)
         break
     end
 end
