@@ -3,10 +3,10 @@ clear;
 clc;
 
 % Target parking pose:
-xP=1000; yP=-1000; thetaP=0; % we will use it in formulas for e and alpha
+xP=500; yP=500; thetaP=0; % we will use it in formulas for e and alpha
 
 %Initial condition:
-x=0; y=0; phi=3*pi/4;
+x=0; y=0; phi=pi/2;
 
 % Control vars
 u = 0;      % Speed

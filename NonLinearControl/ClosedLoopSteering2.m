@@ -10,7 +10,7 @@ bL = 15.0;              % distance from center of rocket to center of mass (m)
 m = 250000.0;           % mass of rocket (kg)
 g = 9.81;               % acceleration due to gravity (m/s^2)
 Fw = m*g;               % weight of rocket (N)
-I = 0.5*m*(width/2)^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
+I = 0.25*m*(width/2)^2 + (1/12)*m*L^2;  % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 
 %% Create System of ODE's for u,w,theta
 % State variables: x1 x2 x3 x4 x5 x6 x7
@@ -228,6 +228,7 @@ title('Position')
 xlabel("x(m)")
 ylabel("y(m)")
 grid on
+axis equal
 
 figure(2)
 plot(trec1(1,:), actuatorsRec(1,:))
@@ -284,4 +285,45 @@ plot(trec1(1,:), zeros(1, length(trec1)), "m--");
 hold off;
 xlabel("Time(s)")
 ylabel("Sideslip(deg)")
+grid on
+
+
+
+
+
+
+
+
+
+figure(8)
+subplot(3,1,1)
+plot(trec1(1,:), yrec1(1,:))
+title('X Position')
+hold on;
+plot(trec2(1,:), ones(length(trec2(1,:)),1)*xP, "m--")
+hold off;
+xlabel("Time(s)")
+ylabel("X")
+grid on
+
+% figure(8)
+subplot(3,1,2)
+plot(trec1(1,:), yrec1(2,:))
+title('Y Position')
+hold on;
+plot(trec2(1,:), ones(length(trec2(1,:)),1)*yP, "m--")
+hold off;
+xlabel("Time(s)")
+ylabel("Y")
+grid on
+
+% figure(9)
+subplot(3,1,3)
+plot(trec1(1,:), yrec1(5,:)*180/pi)
+title('Heading Angle')
+hold on;
+plot(trec2(1,:), ones(length(trec2(1,:)),1)*phiP*180/pi, "m--")
+hold off;
+xlabel("Time(s)")
+ylabel("Phi")
 grid on
