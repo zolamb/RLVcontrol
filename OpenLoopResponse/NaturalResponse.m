@@ -17,7 +17,7 @@ bL = 15.0;              % distance from center of rocket to center of mass (m)
 m = 250000.0;           % mass of rocket (kg)
 g = 9.81;               % acceleration due to gravity (m/s^2)
 Fw = m*g;               % weight of rocket (N)
-I = 0.5*m*(w/2)^2;      % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
+I = 0.25*m*(w/2)^2 + (1/12)*m*L^2;      % inertia for a cylinder (1/2*m*r^2) (kg*m^2)
 
 %% Natural Response - Case 1
 % Expected Result - Flies straight up
@@ -53,20 +53,36 @@ grid on;
 
 %% Natural Response - Case 3
 % Expected Result - Flies up and to the right
-u = [95 100 2*m*g 0]; % [F1, F2, Ft, psi]
+u = [100 1000 1.5*m*g 0]; % [F1, F2, Ft, psi]
 y0 = [0, 0, 0, 0, 0, 0];
 tspan = 0:0.2:100;
 [t, y] = ode45(@(t,y)odeFunction(y, w, L, bL, m, Fw, I, u), tspan, y0);
 
 % Plot position
 figure(3);
-plot(y(:,1), y(:,2));
+grid on;
 hold on;
-plot(y(end,1), y(end,2), "bo");
+for i=1:length(y)
+    plot(y(1:i,1), y(1:i,2), "b");
+%     hold off;
+    if(mod(i,50) == 0)
+        quiver(y(i,1), y(i,2), -sin(y(i,3))*250, cos(y(i,3))*250);
+%         quiver(y(i,1), y(i,2), y(i,4), y(i,5));
+        disp(y(i,3)*180/pi)
+    end
+%     hold on;
+    axis([-250 250 0 5000]);
+    pause(0.1)
+end
+% plot(y(:,1), y(:,2));
+% hold on;
+% plot(y(end,1), y(end,2), "bo");
 title("Position");
 xlabel("x (m)");
 ylabel("y (m)");
-grid on;
+
+% figure(99);
+% plot(t(:,1),y(:,3)*180/pi);
 
 %% Natural Response - Case 4
 % Expected Result - Flies up and to the left

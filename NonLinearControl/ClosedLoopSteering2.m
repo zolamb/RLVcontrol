@@ -213,7 +213,7 @@ while(e>5)
     % Create new initial conditions array
     y1Init = y1(end,:)';
     i = i + 1;
-    if(i>4500)
+    if(i>8500)
         break
     end
 end
