@@ -59,7 +59,7 @@ rank(ctrb(A,B)) % This should equal the number of states
 %% LQR Controller Design
 % % LQR Control
 % Q = [1e12 0 0 0;               % v
-%      0 1e18 0 0;               % beta
+%      0 1e18 0 0;              x % beta
 %      0 0 1 0;                % phi
 %      0 0 0 1e12];              % phidot
 % R = [1e-1 0 0 0;               % u1 = f1+f2
@@ -80,7 +80,7 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=100; yP=500; phiP=pi/2; % we will use it in formulas for e and alpha
+xP=100; yP=1000; phiP=pi/2; % we will use it in formulas for e and alpha
 
 % Gains
 % gamma = 3;
@@ -267,7 +267,7 @@ title('phi')
 figure(7)
 subplot(3,1,1)
 plot(trec1(1,:), yrec1(7,:))
-title('Velocity (v)')
+title('Velocity (v)', 'FontSize', 10)
 hold on;
 plot(trec2(1,:), uRefrec(1,:), "m--")
 hold off;
@@ -278,7 +278,7 @@ grid on
 % figure(8)
 subplot(3,1,2)
 plot(trec1(1,:), yrec1(8,:)*180/pi)
-title('Angular Velocity (omega)')
+title('Angular Velocity (omega)', 'FontSize', 10)
 hold on;
 plot(trec2(1,:), wRefrec(1,:)*180/pi, "m--")
 hold off;
@@ -289,7 +289,7 @@ grid on
 % figure(9)
 subplot(3,1,3)
 plot(trec1(1,:), yrec1(9,:)*180/pi)
-title('Sideslip (beta)')
+title('Sideslip (beta)', 'FontSize', 10)
 hold on;
 plot(trec1(1,:), zeros(1, length(trec1)), "m--");
 hold off;

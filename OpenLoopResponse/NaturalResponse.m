@@ -61,42 +61,55 @@ tspan = 0:0.2:100;
 % Plot position
 figure(3);
 grid on;
+plot(y(:,1), y(:,2));
 hold on;
-for i=1:length(y)
-    plot(y(1:i,1), y(1:i,2), "b");
-%     hold off;
-    if(mod(i,50) == 0)
-        quiver(y(i,1), y(i,2), -sin(y(i,3))*250, cos(y(i,3))*250);
-%         quiver(y(i,1), y(i,2), y(i,4), y(i,5));
-        disp(y(i,3)*180/pi)
-    end
-%     hold on;
-    axis([-250 250 0 5000]);
-    pause(0.1)
-end
-% plot(y(:,1), y(:,2));
-% hold on;
-% plot(y(end,1), y(end,2), "bo");
-title("Position");
-xlabel("x (m)");
-ylabel("y (m)");
+plot(y(end,1), y(end,2), "bo");
 
-% figure(99);
-% plot(t(:,1),y(:,3)*180/pi);
+for i=1:length(y)
+    if(mod(i,100) == 0 && i < length(y)-50)
+        quiver(y(i,1), y(i,2), -sin(y(i,3))*6000, cos(y(i,3))*6000);
+    end
+end
+
+title("Position");
+xlabel("x(m)");
+ylabel("y(m)");
+axis([-10000 10000 0 2.5e4]);
+figure(4);
+plot(t(:,1),y(:,3)*180/pi);
+title("Heading angle");
+xlabel("Time(s)");
+ylabel("Theta (deg)");
+grid on;
 
 %% Natural Response - Case 4
 % Expected Result - Flies up and to the left
-u = [100 95 2*m*g 0]; % [F1, F2, Ft, psi]
+u = [1000 100 1.5*m*g 0]; % [F1, F2, Ft, psi]
 y0 = [0, 0, 0, 0, 0, 0];
 tspan = 0:0.2:100;
 [t, y] = ode45(@(t,y)odeFunction(y, w, L, bL, m, Fw, I, u), tspan, y0);
 
 % Plot position
-figure(4);
+figure(5);
 plot(y(:,1), y(:,2));
 hold on;
 plot(y(end,1), y(end,2), "bo");
+
+for i=1:length(y)
+    if(mod(i,100) == 0 && i < length(y)-50)
+        quiver(y(i,1), y(i,2), -sin(y(i,3))*6000, cos(y(i,3))*6000);
+    end
+end
+
 title("Position");
-xlabel("x (m)");
-ylabel("y (m)");
+xlabel("x(m)");
+ylabel("y(m)");
+axis([-10000 10000 0 2.5e4]);
+grid on;
+
+figure(6);
+plot(t(:,1),y(:,3)*180/pi);
+title("Heading angle");
+xlabel("Time(s)");
+ylabel("Theta (deg)");
 grid on;
