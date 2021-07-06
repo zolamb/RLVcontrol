@@ -35,7 +35,7 @@ F = [((F1 + F2)/m)*cos(x2) + (Ft/m)*cos(x2 - psi) - (Fw/m)*sin(x2 + x3);
 
 %% Create State Space Model
 %Initial condition:
-x=0; y=0; xdot=0; ydot=1; phi=pi/2; phidot=0; u=1; w=0; beta=0;
+x=0; y=0; xdot=0; ydot=25; phi=pi/2; phidot=-1.82*pi/180; u=25; w=-1.82*pi/180; beta=0;
 
 % Creating list of state and control variables
 stateVars = [x1 x2 x3 x4];
@@ -75,12 +75,12 @@ Q = [1e14 0 0 0;               % v
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
-     0 0 0 1e16];              % Psi 
+     0 0 0 1e14];              % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=100; yP=1000; phiP=pi/2; % we will use it in formulas for e and alpha
+xP=100; yP=500; phiP=pi/2; % we will use it in formulas for e and alpha
 
 % Gains
 % gamma = 3;
@@ -135,7 +135,7 @@ while(e>5)
       wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
     
-    wRef*180/pi
+%     wRef*180/pi
 
     % Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
     ystar = [uRef, 0, phi, wRef]';
@@ -149,18 +149,18 @@ while(e>5)
     U=Ustar+uK;
 
     % Apply saturations
-    if U(1,1)>10*m*g
-        U(1,1)=10*m*g;
-    elseif U(1,1)<-10*m*g
-       U(1,1)=-10*m*g; 
+    if U(1,1)>20*m*g
+        U(1,1)=20*m*g;
+    elseif U(1,1)<-20*m*g
+       U(1,1)=-20*m*g; 
     else
        U(1,1)=U(1,1);
     end
 
-    if U(2,1)>10*m*g
-        U(2,1)=10*m*g;
-    elseif U(2,1)<-10*m*g
-       U(2,1)=-10*m*g; 
+    if U(2,1)>20*m*g
+        U(2,1)=20*m*g;
+    elseif U(2,1)<-20*m*g
+       U(2,1)=-20*m*g; 
     else
        U(2,1)=U(2,1);
     end
@@ -173,7 +173,7 @@ while(e>5)
        U(3,1)=U(3,1);
     end
 
-    if U(4,1)>pi/15 % 6 degrees
+    if U(4,1)>pi/3 % 3 degrees
        U(4,1)=pi/15;
     elseif U(4,1)<-pi/15
        U(4,1)=-pi/15; 
@@ -211,7 +211,7 @@ while(e>5)
     
 
     % Create new initial conditions array
-    y1Init = y1(end,:)';
+    y1Init = y1(end,:)'
     i = i + 1;
     if(i>8500)
         break
@@ -232,6 +232,15 @@ plot(yrec1(1,:), yrec1(2,:))
 hold on;
 plot(xRefs, yRefs, "m--")
 plot(yrec1(1,end), yrec1(2,end), "bo")
+
+for i=1:length(yrec1)
+    if(mod(i,10000) == 0 && i < length(yrec1)-10000)
+        quiver(yrec1(1,i), yrec1(2,i), cos(yrec1(5,i))*100, sin(yrec1(5,i))*100);
+%         quiver(yrec1(1,i), yrec1(2,i), cos(yrec1(5,i) + yrec1(9,i))*25, sin(yrec1(5,i) + yrec1(9,i))*25);
+    end
+%     pause(0.1);
+end
+
 legend("Rocket Position","Kinematic Solution Reference", "Target Location", "location", 'northwest')
 hold off;
 title('Position')
