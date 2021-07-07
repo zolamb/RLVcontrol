@@ -35,7 +35,7 @@ F = [((F1 + F2)/m)*cos(x2) + (Ft/m)*cos(x2 - psi) - (Fw/m)*sin(x2 + x3);
 
 %% Create State Space Model
 %Initial condition:
-x=0; y=0; xdot=0; ydot=25; phi=pi/2; phidot=-1.82*pi/180; u=25; w=-1.82*pi/180; beta=0;
+x=0; y=0; xdot=0; ydot=50; phi=pi/2; phidot=-5.37*pi/180; u=50; w=-5.37*pi/180; beta=0;
 
 % Creating list of state and control variables
 stateVars = [x1 x2 x3 x4];
@@ -80,7 +80,7 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=100; yP=500; phiP=pi/2; % we will use it in formulas for e and alpha
+xP=1000; yP=1000; phiP=0; % we will use it in formulas for e and alpha
 
 % Gains
 % gamma = 3;
@@ -213,7 +213,7 @@ while(e>5)
     % Create new initial conditions array
     y1Init = y1(end,:)'
     i = i + 1;
-    if(i>8500)
+    if(i>5000)
         break
     end
 end
