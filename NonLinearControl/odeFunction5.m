@@ -14,7 +14,7 @@ function dx = odeFunction5(x, width, L, bL, m, Fw, I, u) % first parameter must 
     dotTheta=x(6,1);  %<- body turning rate
     
     ddotX = (F1+F2)/m*cos(theta) + (Ft/m)*cos(theta + Psi);
-    ddotY = (F1+F2)/m*sin(theta) + (Ft/m)*sin(theta + Psi) - Fw/m;
+    ddotY = (F1+F2)/m*sin(theta) + (Ft/m)*sin(theta + Psi);
     ddotTheta = (width/(2*I))*(F1-F2) - (Ft/I)*(L/2 - bL)*sin(Psi);
     
     dx(1,1) = vx;

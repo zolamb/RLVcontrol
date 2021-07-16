@@ -3,7 +3,7 @@ clear;
 clc;
 
 % Target parking pose:
-xP=500; yP=500; thetaP=0; % we will use it in formulas for e and alpha
+xP=1500; yP=1000; thetaP=0; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=0; y=0; phi=pi/2;
@@ -13,9 +13,13 @@ u = 0;      % Speed
 w = 0;      % Angular speed
 
 % Less aggressive gains
-gamma = 0.25;
-h = 1;
-k = 0.5;
+% gamma = 0.25;
+% h = 1;
+% k = 0.5;
+
+gamma = 0.05;
+h = 0.25;
+k = 0.1;
 
 % More aggressive gains
 % gamma = 3;
@@ -31,7 +35,7 @@ wrec = [];
 trec=[];
 
 
-for i=1:2500
+for i=1:12000
     % Compute e, alpha, and theta
     % phi - robot heading, theta - heading of the parking pose
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0

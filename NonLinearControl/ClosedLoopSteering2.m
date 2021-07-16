@@ -28,14 +28,14 @@ syms x1 x2 x3 x4
 syms F1 F2 Ft psi
 
 % State Space
-F = [((F1 + F2)/m)*cos(x2) + (Ft/m)*cos(x2 - psi) - (Fw/m)*sin(x2 + x3);
-     -((F1 + F2)/(x1*m))*sin(x2) + (Ft/(x1*m))*sin(psi - x2) - (Fw/(x1*m))*cos(x2 + x3) - x4;
+F = [((F1 + F2)/m)*cos(x2) + (Ft/m)*cos(x2 - psi);
+     -((F1 + F2)/(x1*m))*sin(x2) + (Ft/(x1*m))*sin(psi - x2) - x4;
      x4;
      (width/(2*I))*(F1 - F2) - (Ft/I)*(L/2 - bL)*sin(psi)];
 
 %% Create State Space Model
 %Initial condition:
-x=0; y=0; xdot=0; ydot=50; phi=pi/2; phidot=-5.37*pi/180; u=50; w=-5.37*pi/180; beta=0;
+x=0; y=0; xdot=0; ydot=50; phi=pi/2; phidot=-6.53*pi/180; u=50; w=-6.53*pi/180; beta=0;
 
 % Creating list of state and control variables
 stateVars = [x1 x2 x3 x4];
@@ -80,7 +80,7 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=1000; yP=1000; phiP=0; % we will use it in formulas for e and alpha
+xP=1500; yP=1000; phiP=0; % we will use it in formulas for e and alpha
 
 % Gains
 % gamma = 3;
@@ -173,10 +173,10 @@ while(e>5)
        U(3,1)=U(3,1);
     end
 
-    if U(4,1)>pi/3 % 3 degrees
-       U(4,1)=pi/15;
-    elseif U(4,1)<-pi/15
-       U(4,1)=-pi/15; 
+    if U(4,1)>pi/4 % 6 degrees
+       U(4,1)=pi/4;
+    elseif U(4,1)<-pi/4
+       U(4,1)=-pi/4; 
     else
        U(4,1)=U(4,1);
     end
@@ -225,12 +225,12 @@ betaList = atan2(yrec1(4,:),yrec1(3,:)) - yrec1(5,:);
 yrec1 = [yrec1; uList; wList; betaList];
 
 % Plot x,y results
-load("unicycleRefs");
+load("refs0");
 
 figure(1)
 plot(yrec1(1,:), yrec1(2,:))
 hold on;
-plot(xRefs, yRefs, "m--")
+plot(yrec(1,:), yrec(2,:), "m--")
 plot(yrec1(1,end), yrec1(2,end), "bo")
 
 for i=1:length(yrec1)
