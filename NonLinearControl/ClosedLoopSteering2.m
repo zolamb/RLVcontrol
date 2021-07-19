@@ -69,13 +69,13 @@ rank(ctrb(A,B)) % This should equal the number of states
 % K = lqr(A, B, Q, R);
 % LQR Control
 Q = [1e14 0 0 0;               % v
-     0 1e16 0 0;               % beta
+     0 1e18 0 0;               % beta
      0 0 1 0;                % phi
      0 0 0 1e18];              % phidot
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
-     0 0 0 1e14];              % Psi 
+     0 0 0 1e13];              % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
