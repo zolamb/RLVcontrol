@@ -28,8 +28,8 @@ syms x1 x2 x3 x4
 syms F1 F2 Ft psi
 
 % State Space
-F = [((F1 + F2)/m)*cos(x2) + (Ft/m)*cos(x2 - psi);
-     -((F1 + F2)/(x1*m))*sin(x2) + (Ft/(x1*m))*sin(psi - x2) - x4;
+F = [((F1 + F2)/m)*cos(x2) + (Ft/m)*cos(x2 - psi)  - (Fw/m)*sin(x2 + x3);
+     -((F1 + F2)/(x1*m))*sin(x2) + (Ft/(x1*m))*sin(psi - x2) - (Fw/(x1*m))*cos(x2 + x3) - x4;
      x4;
      (width/(2*I))*(F1 - F2) - (Ft/I)*(L/2 - bL)*sin(psi)];
 
@@ -75,12 +75,12 @@ Q = [1e14 0 0 0;               % v
 R = [1 0 0 0;               % u1 = f1+f2
      0 1 0 0;               % u2 = f1-f2
      0 0 1 0;               % Ft
-     0 0 0 1e13];              % Psi 
+     0 0 0 1e14];              % Psi 
 K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=1500; yP=1000; phiP=0; % we will use it in formulas for e and alpha
+xP=3500; yP=1000; phiP=0; % we will use it in formulas for e and alpha
 
 % Gains
 % gamma = 3;
@@ -149,24 +149,24 @@ while(e>5)
     U=Ustar+uK;
 
     % Apply saturations
-    if U(1,1)>20*m*g
-        U(1,1)=20*m*g;
-    elseif U(1,1)<-20*m*g
-       U(1,1)=-20*m*g; 
+    if U(1,1)>50*m*g
+        U(1,1)=50*m*g;
+    elseif U(1,1)<-50*m*g
+       U(1,1)=-50*m*g; 
     else
        U(1,1)=U(1,1);
     end
 
-    if U(2,1)>20*m*g
-        U(2,1)=20*m*g;
-    elseif U(2,1)<-20*m*g
-       U(2,1)=-20*m*g; 
+    if U(2,1)>50*m*g
+        U(2,1)=50*m*g;
+    elseif U(2,1)<-50*m*g
+       U(2,1)=-50*m*g; 
     else
        U(2,1)=U(2,1);
     end
 
-    if U(3,1)>20*m*g
-        U(3,1)=20*m*g;
+    if U(3,1)>50*m*g
+        U(3,1)=50*m*g;
     elseif U(3,1)<=0
        U(3,1)=0; 
     else
@@ -213,7 +213,7 @@ while(e>5)
     % Create new initial conditions array
     y1Init = y1(end,:)'
     i = i + 1;
-    if(i>5000)
+    if(i>2000)
         break
     end
 end
