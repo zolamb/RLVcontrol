@@ -1,4 +1,4 @@
-function dx = odeFunction5(x, width, L, bL, m, Fw, I, u) % first parameter must be to be t
+function dx = odeFunction(x, width, L, bL, m, Fw, I, u) % first parameter must be to be t
     % Control inputs
     F1=u(1);
     F2=u(2);
