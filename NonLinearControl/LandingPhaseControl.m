@@ -182,7 +182,7 @@ while(e>5)
     end
 
     % Solve ODE for new position
-    [t, y1] = ode45(@(t,y1)odeFunction5(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init);
+    [t, y1] = ode45(@(t,y1)odeFunction(y1, width, L, bL, m, Fw, I, U), [0 dt], y1Init);
 
     % Store last state and solve for current u,w,beta
     x = y1(end,1);

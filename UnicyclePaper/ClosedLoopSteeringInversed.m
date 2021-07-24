@@ -3,10 +3,10 @@ clear;
 clc;
 
 % Target parking pose:
-xP=1500; yP=1000; thetaP=0; % we will use it in formulas for e and alpha
+xP=500; yP=-500; thetaP=pi/2; % we will use it in formulas for e and alpha
 
 %Initial condition:
-x=0; y=0; phi=pi/2;
+x=0; y=0; phi=pi;
 
 % Control vars
 u = 0;      % Speed
@@ -31,14 +31,16 @@ dt = 0.01;
 
 % IC's
 y2Init=[x;y;phi];
-    
+
 yrec = [];
 urec = [];
 wrec = [];
 trec=[];
 
-
+thetaP=thetaP - pi; %%%%%%%%%%%%%%%%%%%%
 for i=1:2000
+    phi = phi - pi; %%%%%%%%%%%%%%%%%%%%
+    
     % Compute e, alpha, and theta
     % phi - robot heading, theta - heading of the parking pose
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
@@ -55,6 +57,8 @@ for i=1:2000
     else
       w = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
+    
+    u = -u; %%%%%%%%%%%%%%%%%%%%%
     
     % Solve cartesian ODE for small timestep
     [t, y2] = ode45(@(t,y2)odeFunction2(t, y2, u, w), [0 dt], y2Init);
