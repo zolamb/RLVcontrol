@@ -34,8 +34,9 @@ F = [((F1 + F2)/m)*cos(x2) + (Ft/m)*cos(x2 - psi)  - (Fw/m)*sin(x2 + x3);
      (width/(2*I))*(F1 - F2) - (Ft/I)*(L/2 - bL)*sin(psi)];
 
 %% Create State Space Model
-%Initial condition:
-x=0; y=0; xdot=0; ydot=50; phi=pi/2; phidot=-6.53*pi/180; u=50; w=-6.53*pi/180; beta=0;
+%Initial conditions:
+x=1500; y=1500; xdot=50; ydot=-2; phi=pi; phidot=-6.53*pi/180;
+u=-sqrt(xdot^2 + ydot^2); w=phidot; beta=atan2(ydot,xdot) - phi + pi; %%%%%%%%%%%%%%%%%%%% + pi
 
 % Creating list of state and control variables
 stateVars = [x1 x2 x3 x4];
@@ -70,7 +71,7 @@ K = lqr(A, B, Q, R);
 
 %% Control Block Design
 % Target parking pose:
-xP=3500; yP=1000; phiP=0; % we will use it in formulas for e and alpha
+xP=3000; yP=0; phiP=pi/2; % we will use it in formulas for e and alpha
 
 % Gains
 % gamma = 3;
@@ -78,14 +79,9 @@ xP=3500; yP=1000; phiP=0; % we will use it in formulas for e and alpha
 % k = 6;
 
 % Less aggressive gains
-% gamma = 0.25;
-% h = 1;
-% k = 0.5;
-
-% Less Less aggressive gains
-gamma = 0.05;
+gamma = 0.1;
 h = 0.25;
-k = 0.1;
+k = 0.2;
 
 % Initial conditions array form
 Ustar = [0 0 m*g 0]';
@@ -108,7 +104,11 @@ e = 100;
 % for i=1:4000
 i = 1;
 flag = 1;
+
+phiP = phiP - pi; %%%%%%%%%%%%%%%%%%%%
 while(e>5)
+    phi = phi - pi; %%%%%%%%%%%%%%%%%%%%
+    
     % Compute e, alpha, and theta
     e=sqrt((xP-x)^2+(yP-y)^2); % Distance between x,y and xP=0,yP=0
     theta=atan2(yP-y,xP-x)-phiP; % ThetaP is acting as an offset because the paper specifies equations where theta->0
@@ -125,7 +125,7 @@ while(e>5)
       wRef = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
     end
     
-%     wRef*180/pi
+    uRef = -uRef; %%%%%%%%%%%%%%%%%%%%
 
     % Compute control input u = -K(y0-ystar)  --> (u1,u2,ft,psi)
     ystar = [uRef, 0, phi, wRef]';
@@ -181,9 +181,9 @@ while(e>5)
     ydot = y1(end,4);
     phi = y1(end,5);
     phidot = y1(end,6);
-    u = sqrt(xdot^2 + ydot^2);
+    u = -sqrt(xdot^2 + ydot^2); %%%%%%%%%%%%%% -u
     w = phidot;
-    beta = atan2(ydot,xdot) - phi;
+    beta = atan2(ydot,xdot) - phi + pi; %%%%%%%%%%%%%% + pi
 
     % Record results
     yrec1=[yrec1,y1'];
@@ -203,15 +203,15 @@ while(e>5)
     % Create new initial conditions array
     y1Init = y1(end,:)'
     i = i + 1;
-    if(i>2000)
+    if(i>4500)
         break
     end
 end
 
 % Compute the u,w,beta values and add to yRec
-uList = sqrt(yrec1(3,:).^2 + yrec1(4,:).^2);
+uList = -sqrt(yrec1(3,:).^2 + yrec1(4,:).^2); %%%%%%%%%%%%%% -u
 wList = yrec1(6,:);
-betaList = atan2(yrec1(4,:),yrec1(3,:)) - yrec1(5,:);
+betaList = atan2(yrec1(4,:),yrec1(3,:)) - yrec1(5,:) + pi; %%%%%%% + pi
 yrec1 = [yrec1; uList; wList; betaList];
 
 % Plot x,y results

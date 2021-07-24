@@ -78,11 +78,6 @@ xP=3500; yP=1000; phiP=0; % we will use it in formulas for e and alpha
 % k = 6;
 
 % Less aggressive gains
-% gamma = 0.25;
-% h = 1;
-% k = 0.5;
-
-% Less Less aggressive gains
 gamma = 0.05;
 h = 0.25;
 k = 0.1;
