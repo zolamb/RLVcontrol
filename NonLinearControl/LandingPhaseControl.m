@@ -57,16 +57,6 @@ B = double(subs(Bx,v,p));
 rank(ctrb(A,B)) % This should equal the number of states
 
 %% LQR Controller Design
-% % LQR Control
-% Q = [1e12 0 0 0;               % v
-%      0 1e18 0 0;              x % beta
-%      0 0 1 0;                % phi
-%      0 0 0 1e12];              % phidot
-% R = [1e-1 0 0 0;               % u1 = f1+f2
-%      0 1e-1 0 0;               % u2 = f1-f2
-%      0 0 1 0;               % Ft
-%      0 0 0 1e18];              % Psi 
-% K = lqr(A, B, Q, R);
 % LQR Control
 Q = [1e14 0 0 0;               % v
      0 1e18 0 0;               % beta
