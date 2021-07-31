@@ -3,7 +3,7 @@ clear;
 clc;
 
 % Target parking pose:
-xP=1500; yP=1000; thetaP=0; % we will use it in formulas for e and alpha
+xP=3500; yP=1000; thetaP=0; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=0; y=0; phi=pi/2;
@@ -17,14 +17,14 @@ w = 0;      % Angular speed
 % h = 1;
 % k = 0.5;
 
-% gamma = 0.05;
-% h = 0.25;
-% k = 0.1;
+gamma = 0.05;
+h = 0.25;
+k = 0.1;
 
 % More aggressive gains
-gamma = 3;
-h = 1;
-k = 6;
+% gamma = 3;
+% h = 1;
+% k = 6;
 
 % Timestep
 dt = 0.01;

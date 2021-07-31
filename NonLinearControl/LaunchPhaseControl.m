@@ -210,7 +210,7 @@ betaList = atan2(yrec1(4,:),yrec1(3,:)) - yrec1(5,:);
 yrec1 = [yrec1; uList; wList; betaList];
 
 % Plot x,y results
-load("refs0");
+load("refs1");
 
 figure(1)
 plot(yrec1(1,:), yrec1(2,:))
@@ -226,7 +226,7 @@ for i=1:length(yrec1)
 %     pause(0.1);
 end
 
-legend("Rocket Position","Kinematic Solution Reference", "Target Location", "location", 'northwest')
+legend("Rocket Position","Kinematic Solution Reference", "Rocket Location", "location", 'northwest')
 hold off;
 title('Position')
 xlabel("x(m)")

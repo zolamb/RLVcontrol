@@ -220,7 +220,7 @@ load("refs0");
 figure(1)
 plot(yrec1(1,:), yrec1(2,:))
 hold on;
-plot(yrec(1,:), yrec(2,:), "m--")
+% plot(yrec(1,:), yrec(2,:), "m--")
 plot(yrec1(1,end), yrec1(2,end), "bo")
 
 for i=1:length(yrec1)
@@ -231,7 +231,7 @@ for i=1:length(yrec1)
 %     pause(0.1);
 end
 
-legend("Rocket Position","Kinematic Solution Reference", "Target Location", "location", 'northwest')
+legend("Rocket Position", "Rocket Location", "location", 'northwest')
 hold off;
 title('Position')
 xlabel("x(m)")
