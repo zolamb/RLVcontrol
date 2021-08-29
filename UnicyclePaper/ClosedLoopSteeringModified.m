@@ -3,7 +3,7 @@ clear;
 clc;
 
 % Target parking pose:
-xP=1500; yP=1000; thetaP=0; % we will use it in formulas for e and alpha
+xP=3500; yP=3000; thetaP=0; % we will use it in formulas for e and alpha
 
 %Initial condition:
 x=0; y=0; phi=pi/2;
@@ -17,9 +17,10 @@ w = 0;      % Angular speed
 % h = 1;
 % k = 0.5;
 
-gamma = 0.7;
-h = 0.5;
-k = 0.5;
+% gamma = 0.01;
+gamma = 0.01;
+h = 0.01;
+k = 0.08;
 
 % More aggressive gains
 % gamma = 3;
@@ -37,8 +38,12 @@ urec = [];
 wrec = [];
 trec=[];
 
-
-for i=1:4500
+e = 1000;
+for i=1:6000
+    if(e < 100)
+        disp("Here")
+        break
+    end
     % Compute e, alpha, and theta
     % phi - robot heading, theta - heading of the parking pose
     e=sqrt((xP-x)^2+(yP-y)^2); %distance between x,y and xP=0,yP=0
@@ -47,13 +52,11 @@ for i=1:4500
     alpha=atan2(sin(alpha),cos(alpha)); % Wrap angle to +- pi
 
     % Update controls
-    u = gamma*e*cos(alpha);
-    if alpha <= 1e-50
-      % lim alpha->0 (cos(alpha)*sin(alpha)/alpha) = 1
-      w = k*alpha + gamma*cos(alpha)*sin(alpha)+...
-          gamma*h*theta;
+    u = 100;
+    if alpha <= 1e-50 || e <= 1e-50
+      w = k*alpha + gamma*u*sin(alpha)*(alpha+h*theta)/(alpha*e);
     else
-      w = k*alpha + gamma*cos(alpha)*sin(alpha)*(alpha+h*theta)/alpha;
+      w = k*alpha + gamma*u*sin(alpha)*(alpha+h*theta)/(alpha*e);
     end
     
     % Solve cartesian ODE for small timestep
@@ -81,11 +84,11 @@ ylabel("y");
 hold on;
 plot(yrec(1,end), yrec(2,end), "bo")
 axis equal
-% figure(2)
-% plot(trec,yrec(3,:)*180/pi)
-% figure(3)
-% plot(trec,urec)
-% title('velocity')
-% figure(4)
-% plot(trec,wrec)
-% title('omega')
+figure(2)
+plot(trec,yrec(3,:)*180/pi)
+figure(3)
+plot(trec,urec)
+title('velocity')
+figure(4)
+plot(trec,wrec)
+title('omega')
