@@ -331,7 +331,7 @@ subplot(3,1,3)
 plot(trec1(1,:), yrec1(5,:)*180/pi)
 title('Heading Angle')
 hold on;
-plot(trec2(1,:), ones(length(trec2(1,:)),1)*phiP*180/pi, "m--")
+plot(trec2(1,:), ones(length(trec2(1,:)),1)*(phiP+pi)*180/pi, "m--")
 hold off;
 xlabel("Time(s)")
 ylabel("Phi")
